@@ -1,0 +1,82 @@
+[package]
+authors = ['ys']
+build = 'build.rs'
+edition = '2018'
+name = 'ibc-demo'
+version = '2.0.0'
+[profile.release]
+panic = 'unwind'
+
+[[bin]]
+name = 'ibc-demo'
+path = 'src/main.rs'
+
+[dependencies]
+derive_more = '0.14.0'
+exit-future = '0.1'
+futures = '0.1'
+log = '0.4'
+parity-codec = '4.1.1'
+parking_lot = '0.8.0'
+tokio = '0.1'
+trie-root = '0.15.0'
+
+[dependencies.basic-authorship]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-basic-authorship'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[dependencies.consensus]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-consensus-aura'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[dependencies.ctrlc]
+features = ['termination']
+version = '3.0'
+
+[dependencies.inherents]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-inherents'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[dependencies.network]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-network'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[dependencies.ibc-demo-runtime]
+path = 'runtime'
+
+[dependencies.primitives]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-primitives'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[dependencies.sr-io]
+git = 'https://github.com/paritytech/substrate.git'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[dependencies.substrate-cli]
+git = 'https://github.com/paritytech/substrate.git'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[dependencies.substrate-client]
+git = 'https://github.com/paritytech/substrate.git'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[dependencies.substrate-executor]
+git = 'https://github.com/paritytech/substrate.git'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[dependencies.substrate-service]
+git = 'https://github.com/paritytech/substrate.git'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[dependencies.transaction-pool]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-transaction-pool'
+rev = '4408fa7d17c4a25e859411dd1d046b86d5b0a339'
+
+[build-dependencies]
+vergen = '3'
