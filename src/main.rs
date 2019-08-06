@@ -4,24 +4,24 @@
 #![warn(unused_extern_crates)]
 
 mod chain_spec;
-mod service;
 mod cli;
+mod service;
 
-pub use substrate_cli::{VersionInfo, IntoExit, error};
+pub use substrate_cli::{error, IntoExit, VersionInfo};
 
 fn main() {
-	let version = VersionInfo {
-		name: "Substrate Node",
-		commit: env!("VERGEN_SHA_SHORT"),
-		version: env!("CARGO_PKG_VERSION"),
-		executable_name: "ibc-demo",
-		author: "ys",
-		description: "ibc-demo",
-		support_url: "support.anonymous.an",
-	};
+    let version = VersionInfo {
+        name: "Substrate Node",
+        commit: env!("VERGEN_SHA_SHORT"),
+        version: env!("CARGO_PKG_VERSION"),
+        executable_name: "ibc-demo",
+        author: "ys",
+        description: "ibc-demo",
+        support_url: "support.anonymous.an",
+    };
 
-	if let Err(e) = cli::run(::std::env::args(), cli::Exit, version) {
-		eprintln!("Error starting the node: {}\n\n{:?}", e, e);
-		std::process::exit(1)
-	}
+    if let Err(e) = cli::run(::std::env::args(), cli::Exit, version) {
+        eprintln!("Error starting the node: {}\n\n{:?}", e, e);
+        std::process::exit(1)
+    }
 }

@@ -1,8 +1,8 @@
-use primitives::{ed25519, sr25519, Pair};
 use ibc_demo_runtime::{
-	AccountId, GenesisConfig, AuraConfig, BalancesConfig,
-	SudoConfig, IndicesConfig, SystemConfig, WASM_BINARY, AuraId
+    AccountId, AuraConfig, AuraId, BalancesConfig, GenesisConfig, IndicesConfig, SudoConfig,
+    SystemConfig, WASM_BINARY,
 };
+use primitives::{ed25519, sr25519, Pair};
 use substrate_service;
 
 // Note this is the URL for the telemetry server
@@ -16,96 +16,103 @@ pub type ChainSpec = substrate_service::ChainSpec<GenesisConfig>;
 /// from a string (`--chain=...`) into a `ChainSpec`.
 #[derive(Clone, Debug)]
 pub enum Alternative {
-	/// Whatever the current runtime is, with just Alice as an auth.
-	Development,
-	/// Whatever the current runtime is, with simple Alice/Bob auths.
-	LocalTestnet,
+    /// Whatever the current runtime is, with just Alice as an auth.
+    Development,
+    /// Whatever the current runtime is, with simple Alice/Bob auths.
+    LocalTestnet,
 }
 
 fn authority_key(s: &str) -> AuraId {
-	ed25519::Pair::from_string(&format!("//{}", s), None)
-		.expect("static values are valid; qed")
-		.public()
+    ed25519::Pair::from_string(&format!("//{}", s), None)
+        .expect("static values are valid; qed")
+        .public()
 }
 
 fn account_key(s: &str) -> AccountId {
-	sr25519::Pair::from_string(&format!("//{}", s), None)
-		.expect("static values are valid; qed")
-		.public()
+    sr25519::Pair::from_string(&format!("//{}", s), None)
+        .expect("static values are valid; qed")
+        .public()
 }
 
 impl Alternative {
-	/// Get an actual chain config from one of the alternatives.
-	pub(crate) fn load(self) -> Result<ChainSpec, String> {
-		Ok(match self {
-			Alternative::Development => ChainSpec::from_genesis(
-				"Development",
-				"dev",
-				|| testnet_genesis(vec![
-					authority_key("Alice")
-				], vec![
-					account_key("Alice")
-				],
-					account_key("Alice")
-				),
-				vec![],
-				None,
-				None,
-				None,
-				None
-			),
-			Alternative::LocalTestnet => ChainSpec::from_genesis(
-				"Local Testnet",
-				"local_testnet",
-				|| testnet_genesis(vec![
-					authority_key("Alice"),
-					authority_key("Bob"),
-				], vec![
-					account_key("Alice"),
-					account_key("Bob"),
-					account_key("Charlie"),
-					account_key("Dave"),
-					account_key("Eve"),
-					account_key("Ferdie"),
-				],
-					account_key("Alice"),
-				),
-				vec![],
-				None,
-				None,
-				None,
-				None
-			),
-		})
-	}
+    /// Get an actual chain config from one of the alternatives.
+    pub(crate) fn load(self) -> Result<ChainSpec, String> {
+        Ok(match self {
+            Alternative::Development => ChainSpec::from_genesis(
+                "Development",
+                "dev",
+                || {
+                    testnet_genesis(
+                        vec![authority_key("Alice")],
+                        vec![account_key("Alice")],
+                        account_key("Alice"),
+                    )
+                },
+                vec![],
+                None,
+                None,
+                None,
+                None,
+            ),
+            Alternative::LocalTestnet => ChainSpec::from_genesis(
+                "Local Testnet",
+                "local_testnet",
+                || {
+                    testnet_genesis(
+                        vec![authority_key("Alice"), authority_key("Bob")],
+                        vec![
+                            account_key("Alice"),
+                            account_key("Bob"),
+                            account_key("Charlie"),
+                            account_key("Dave"),
+                            account_key("Eve"),
+                            account_key("Ferdie"),
+                        ],
+                        account_key("Alice"),
+                    )
+                },
+                vec![],
+                None,
+                None,
+                None,
+                None,
+            ),
+        })
+    }
 
-	pub(crate) fn from(s: &str) -> Option<Self> {
-		match s {
-			"dev" => Some(Alternative::Development),
-			"" | "local" => Some(Alternative::LocalTestnet),
-			_ => None,
-		}
-	}
+    pub(crate) fn from(s: &str) -> Option<Self> {
+        match s {
+            "dev" => Some(Alternative::Development),
+            "" | "local" => Some(Alternative::LocalTestnet),
+            _ => None,
+        }
+    }
 }
 
-fn testnet_genesis(initial_authorities: Vec<AuraId>, endowed_accounts: Vec<AccountId>, root_key: AccountId) -> GenesisConfig {
-	GenesisConfig {
-		system: Some(SystemConfig {
-			code: WASM_BINARY.to_vec(),
-			changes_trie_config: Default::default(),
-		}),
-		aura: Some(AuraConfig {
-			authorities: initial_authorities.clone(),
-		}),
-		indices: Some(IndicesConfig {
-			ids: endowed_accounts.clone(),
-		}),
-		balances: Some(BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k|(k, 1 << 60)).collect(),
-			vesting: vec![],
-		}),
-		sudo: Some(SudoConfig {
-			key: root_key,
-		}),
-	}
+fn testnet_genesis(
+    initial_authorities: Vec<AuraId>,
+    endowed_accounts: Vec<AccountId>,
+    root_key: AccountId,
+) -> GenesisConfig {
+    GenesisConfig {
+        system: Some(SystemConfig {
+            code: WASM_BINARY.to_vec(),
+            changes_trie_config: Default::default(),
+        }),
+        aura: Some(AuraConfig {
+            authorities: initial_authorities.clone(),
+        }),
+        indices: Some(IndicesConfig {
+            ids: endowed_accounts.clone(),
+        }),
+        balances: Some(BalancesConfig {
+            balances: endowed_accounts
+                .iter()
+                .cloned()
+                .map(|k| (k, 1 << 60))
+                .collect(),
+            vesting: vec![],
+        }),
+        sudo: Some(SudoConfig { key: root_key }),
+    }
 }
