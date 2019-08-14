@@ -1,4 +1,4 @@
-# ibc-demo
+# ibc-node
 
 A new SRML-based Substrate node, ready for hacking.
 

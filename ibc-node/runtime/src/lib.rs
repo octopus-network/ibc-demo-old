@@ -12,14 +12,15 @@ use client::{
     block_builder::api::{self as block_builder_api, CheckInherentsResult, InherentData},
     impl_runtime_apis, runtime_api,
 };
-use primitives::{ed25519, sr25519, OpaqueMetadata};
+use primitives::{crypto::key_types, sr25519, OpaqueMetadata};
 use rstd::prelude::*;
 use sr_primitives::traits::{
     BlakeTwo256, Block as BlockT, ConvertInto, NumberFor, StaticLookup, Verify,
 };
 use sr_primitives::weights::Weight;
 use sr_primitives::{
-    create_runtime_str, generic, transaction_validity::TransactionValidity, ApplyResult,
+    create_runtime_str, generic, impl_opaque_keys, transaction_validity::TransactionValidity,
+    ApplyResult,
 };
 #[cfg(feature = "std")]
 use version::NativeVersion;
@@ -34,10 +35,10 @@ pub use support::{construct_runtime, parameter_types, StorageValue};
 pub use timestamp::Call as TimestampCall;
 
 /// Alias to the signature scheme used for Aura authority signatures.
-pub type AuraSignature = ed25519::Signature;
+pub type AuraSignature = consensus_aura::sr25519::AuthoritySignature;
 
 /// The Ed25519 pub key of an session that belongs to an Aura authority of the chain.
-pub type AuraId = ed25519::Public;
+pub type AuraId = consensus_aura::sr25519::AuthorityId;
 
 /// Alias to pubkey that identifies an account on the chain.
 pub type AccountId = <AccountSignature as Verify>::Signer;
@@ -49,15 +50,16 @@ pub type AccountSignature = sr25519::Signature;
 pub type Hash = primitives::H256;
 
 /// Index of a block number in the chain.
-pub type BlockNumber = u64;
+pub type BlockNumber = u32;
 
 /// Index of an account's extrinsic in the chain.
-pub type Nonce = u64;
+pub type Nonce = u32;
 
 /// Balance type for the node.
 pub type Balance = u128;
 
-mod ibc;
+/// Used for the module template in `./template.rs`
+mod template;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -74,14 +76,19 @@ pub mod opaque {
     pub type Block = generic::Block<Header, UncheckedExtrinsic>;
     /// Opaque block identifier type.
     pub type BlockId = generic::BlockId<Block>;
-    /// Opaque session key type.
-    pub type SessionKey = AuraId;
+
+    impl_opaque_keys! {
+        pub struct SessionKeys {
+            #[id(key_types::AURA)]
+            pub aura: AuraId,
+        }
+    }
 }
 
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("ibc-demo"),
-    impl_name: create_runtime_str!("ibc-demo"),
+    spec_name: create_runtime_str!("ibc-node"),
+    impl_name: create_runtime_str!("ibc-node"),
     authoring_version: 3,
     spec_version: 4,
     impl_version: 4,
@@ -107,6 +114,8 @@ parameter_types! {
 impl system::Trait for Runtime {
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
+    /// The aggregated dispatch type that is available for extrinsics.
+    type Call = Call;
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
     type Lookup = Indices;
     /// The index type for storing how many extrinsics an account has signed.
@@ -155,6 +164,7 @@ impl indices::Trait for Runtime {
 parameter_types! {
     pub const MinimumPeriod: u64 = 5000;
 }
+
 impl timestamp::Trait for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
@@ -197,7 +207,8 @@ impl sudo::Trait for Runtime {
     type Proposal = Call;
 }
 
-impl ibc::Trait for Runtime {
+/// Used for the module template in `./template.rs`
+impl template::Trait for Runtime {
     type Event = Event;
 }
 
@@ -213,7 +224,8 @@ construct_runtime!(
 		Indices: indices::{default, Config<T>},
 		Balances: balances,
 		Sudo: sudo,
-		Ibc: ibc::{Module, Call, Storage, Event<T>},
+		// Used for the module template in `./template.rs`
+		TemplateModule: template::{Module, Call, Storage, Event<T>},
 	}
 );
 
@@ -303,6 +315,13 @@ impl_runtime_apis! {
     impl offchain_primitives::OffchainWorkerApi<Block> for Runtime {
         fn offchain_worker(n: NumberFor<Block>) {
             Executive::offchain_worker(n)
+        }
+    }
+
+    impl substrate_session::SessionKeys<Block> for Runtime {
+        fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
+            let seed = seed.as_ref().map(|s| rstd::str::from_utf8(&s).expect("Seed is an utf8 string"));
+            opaque::SessionKeys::generate(seed)
         }
     }
 }

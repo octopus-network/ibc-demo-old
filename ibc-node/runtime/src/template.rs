@@ -19,7 +19,7 @@ pub trait Trait: system::Trait {
 
 // This module's storage items.
 decl_storage! {
-    trait Store for Module<T: Trait> as Ibc {
+    trait Store for Module<T: Trait> as TemplateModule {
         // Just a dummy storage item.
         // Here we are declaring a StorageValue, `Something` as a Option<u32>
         // `get(something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
@@ -97,6 +97,7 @@ mod tests {
     }
     impl system::Trait for Test {
         type Origin = Origin;
+        type Call = ();
         type Index = u64;
         type BlockNumber = u64;
         type Hash = H256;
@@ -114,7 +115,7 @@ mod tests {
     impl Trait for Test {
         type Event = ();
     }
-    type Ibc = Module<Test>;
+    type TemplateModule = Module<Test>;
 
     // This function basically just builds a genesis storage key/value store according to
     // our desired mockup.
@@ -122,7 +123,6 @@ mod tests {
         system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap()
-            .0
             .into()
     }
 
@@ -131,9 +131,9 @@ mod tests {
         with_externalities(&mut new_test_ext(), || {
             // Just a dummy test for the dummy funtion `do_something`
             // calling the `do_something` function with a value 42
-            assert_ok!(Ibc::do_something(Origin::signed(1), 42));
+            assert_ok!(TemplateModule::do_something(Origin::signed(1), 42));
             // asserting that the stored value is equal to what we stored
-            assert_eq!(Ibc::something(), Some(42));
+            assert_eq!(TemplateModule::something(), Some(42));
         });
     }
 }
