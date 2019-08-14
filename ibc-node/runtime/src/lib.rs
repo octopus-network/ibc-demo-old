@@ -240,11 +240,7 @@ pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = (
-    system::CheckNonce<Runtime>,
-    system::CheckWeight<Runtime>,
-    balances::TakeFees<Runtime>,
-);
+pub type SignedExtra = (system::CheckGenesis<Runtime>, system::CheckWeight<Runtime>);
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
     generic::UncheckedExtrinsic<Address, Call, AccountSignature, SignedExtra>;
