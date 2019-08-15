@@ -1,5 +1,18 @@
+[package]
+authors = ['ys']
+build = 'build.rs'
+edition = '2018'
+name = 'ibc-node'
+version = '2.0.0'
+
 [build-dependencies]
 vergen = '3'
+[profile.release]
+panic = 'unwind'
+
+[[bin]]
+name = 'ibc-node'
+path = 'src/main.rs'
 
 [dependencies]
 derive_more = '0.14.0'
@@ -13,12 +26,12 @@ trie-root = '0.15.0'
 [dependencies.aura-primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-consensus-aura-primitives'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.basic-authorship]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-basic-authorship'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.codec]
 package = 'parity-scale-codec'
@@ -27,7 +40,7 @@ version = '1.0.0'
 [dependencies.consensus]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-consensus-aura'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.ctrlc]
 features = ['termination']
@@ -36,17 +49,17 @@ version = '3.0'
 [dependencies.grandpa-primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-finality-grandpa-primitives'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.inherents]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-inherents'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.network]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-network'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.ibc-node-runtime]
 path = 'runtime'
@@ -54,40 +67,29 @@ path = 'runtime'
 [dependencies.primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.sr-io]
 git = 'https://github.com/paritytech/substrate.git'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.substrate-cli]
 git = 'https://github.com/paritytech/substrate.git'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.substrate-client]
 git = 'https://github.com/paritytech/substrate.git'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.substrate-executor]
 git = 'https://github.com/paritytech/substrate.git'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.substrate-service]
 git = 'https://github.com/paritytech/substrate.git'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.transaction-pool]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-transaction-pool'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
-
-[[bin]]
-name = 'ibc-node'
-path = 'src/main.rs'
-
-[package]
-authors = ['ys']
-build = 'build.rs'
-edition = '2018'
-name = 'ibc-node'
-version = '2.0.0'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'

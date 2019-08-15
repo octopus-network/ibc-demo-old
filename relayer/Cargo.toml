@@ -14,9 +14,8 @@ path = 'src/main.rs'
 futures = '0.1'
 hyper = "0.12"
 jsonrpc-core-client = { version = "12.0.0", features = ["http", "ws"] }
-env_logger = "0.6"
 hex = "0.3"
-hex-literal = "0.2"
+clap = { version = "~2.32", features = ["yaml"] }
 
 [dependencies.codec]
 package = 'parity-scale-codec'
@@ -28,29 +27,29 @@ path = '../ibc-node/runtime'
 [dependencies.primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.rpc]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-rpc'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.system]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-system'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.balances]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-balances'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.node-primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'node-primitives'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
 [dependencies.keyring]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-keyring'
-rev = '49db9e370e1a7aa490e1fb8749545d9781432a0d'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'

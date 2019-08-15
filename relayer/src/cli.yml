@@ -1,0 +1,30 @@
+name: relayer
+author: "Yuanchao Sun <yuanchao.sun@gmail.com>"
+args:
+  - password:
+      short: p
+      long: password
+      takes_value: true
+      required: false
+      help: The password for the key
+subcommands:
+  - set-head:
+      args:
+        - suri:
+            long: suri
+            short: s
+            help: The secret key URI.
+            takes_value: true
+            required: true
+        - nonce:
+            short: n
+            long: nonce
+            help: The nonce.
+            takes_value: true
+            required: true
+        - genesis:
+            short: g
+            long: genesis
+            help: The genesis hash.
+            takes_value: true
+            required: true
