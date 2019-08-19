@@ -16,6 +16,9 @@ hyper = "0.12"
 jsonrpc-core-client = { version = "12.0.0", features = ["http", "ws"] }
 hex = "0.3"
 clap = { version = "~2.32", features = ["yaml"] }
+tokio = "0.1"
+env_logger = "0.6"
+substrate-subxt = { git="https://github.com/en/substrate-subxt.git", branch="ibc-demo" }
 
 [dependencies.codec]
 package = 'parity-scale-codec'
@@ -39,17 +42,7 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-system'
 rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 
-[dependencies.balances]
-git = 'https://github.com/paritytech/substrate.git'
-package = 'srml-balances'
-rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
-
 [dependencies.node-primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'node-primitives'
-rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
-
-[dependencies.keyring]
-git = 'https://github.com/paritytech/substrate.git'
-package = 'substrate-keyring'
 rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'

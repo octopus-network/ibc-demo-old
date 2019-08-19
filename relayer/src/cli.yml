@@ -8,7 +8,7 @@ args:
       required: false
       help: The password for the key
 subcommands:
-  - set-head:
+  - set-heads:
       args:
         - suri:
             long: suri
@@ -26,5 +26,38 @@ subcommands:
             short: g
             long: genesis
             help: The genesis hash.
+            takes_value: true
+            required: true
+  - start:
+  - interchain-message:
+      args:
+        - suri:
+            long: suri
+            short: s
+            help: The secret key URI.
+            takes_value: true
+            required: true
+        - nonce:
+            short: n
+            long: nonce
+            help: The nonce.
+            takes_value: true
+            required: true
+        - genesis:
+            short: g
+            long: genesis
+            help: The genesis hash.
+            takes_value: true
+            required: true
+        - para-id:
+            short: p
+            long: para-id
+            help: The parachain id.
+            takes_value: true
+            required: true
+        - message:
+            short: m
+            long: message
+            help: The interchain message in hexadecimal format.
             takes_value: true
             required: true

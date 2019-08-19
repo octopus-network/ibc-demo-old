@@ -6,8 +6,14 @@
 
 /// For more guidance on Substrate modules, see the example module
 /// https://github.com/paritytech/substrate/blob/master/srml/example/src/lib.rs
-use support::{decl_event, decl_module, decl_storage, dispatch::Result, StorageValue};
+use support::{
+    decl_event, decl_module, decl_storage,
+    dispatch::{Result, Vec},
+    StorageMap, StorageValue,
+};
 use system::ensure_signed;
+
+pub type ParaId = u32;
 
 /// The module's configuration trait.
 pub trait Trait: system::Trait {
@@ -19,11 +25,12 @@ pub trait Trait: system::Trait {
 
 // This module's storage items.
 decl_storage! {
-    trait Store for Module<T: Trait> as TemplateModule {
+    trait Store for Module<T: Trait> as Ibc {
         // Just a dummy storage item.
         // Here we are declaring a StorageValue, `Something` as a Option<u32>
         // `get(something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
         Something get(something): Option<u32>;
+        Heads get(parachain_head): map ParaId => Option<Vec<u8>>;
     }
 }
 
@@ -50,6 +57,18 @@ decl_module! {
             Self::deposit_event(RawEvent::SomethingStored(something, who));
             Ok(())
         }
+
+        fn set_heads(origin, id: ParaId, heads: Vec<u8>) -> Result {
+            ensure_signed(origin)?;
+            Heads::insert(&id, &heads);
+            Ok(())
+        }
+
+        fn interchain_message(origin, id: ParaId, message: Vec<u8>) -> Result {
+            ensure_signed(origin)?;
+            Self::deposit_event(RawEvent::InterchainMessageSent(id, message));
+            Ok(())
+        }
     }
 }
 
@@ -62,6 +81,7 @@ decl_event!(
         // Event `Something` is declared with a parameter of the type `u32` and `AccountId`
         // To emit this event, we call the deposit funtion, from our runtime funtions
         SomethingStored(u32, AccountId),
+        InterchainMessageSent(ParaId, Vec<u8>),
     }
 );
 
@@ -115,7 +135,7 @@ mod tests {
     impl Trait for Test {
         type Event = ();
     }
-    type TemplateModule = Module<Test>;
+    type Ibc = Module<Test>;
 
     // This function basically just builds a genesis storage key/value store according to
     // our desired mockup.
@@ -131,9 +151,9 @@ mod tests {
         with_externalities(&mut new_test_ext(), || {
             // Just a dummy test for the dummy funtion `do_something`
             // calling the `do_something` function with a value 42
-            assert_ok!(TemplateModule::do_something(Origin::signed(1), 42));
+            assert_ok!(Ibc::do_something(Origin::signed(1), 42));
             // asserting that the stored value is equal to what we stored
-            assert_eq!(TemplateModule::something(), Some(42));
+            assert_eq!(Ibc::something(), Some(42));
         });
     }
 }
