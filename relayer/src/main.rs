@@ -102,14 +102,29 @@ fn execute(matches: clap::ArgMatches) {
         ("start", Some(_matches)) => {
             let (mut rt, client) = setup();
             let stream = rt.block_on(client.subscribe_events()).unwrap();
-            let task = stream
-                .for_each(|t| {
-                    println!("{:?}", t);
+            let block_events = stream
+                .for_each(|change_set| {
+                    change_set
+                        .changes
+                        .iter()
+                        .filter_map(|(_key, data)| {
+                            data.as_ref().map(|data| Decode::decode(&mut &data.0[..]))
+                        })
+                        .for_each(
+                            |events: Result<
+                                Vec<
+                                    system::EventRecord<
+                                        <Runtime as System>::Event,
+                                        <Runtime as System>::Hash,
+                                    >,
+                                >,
+                                codec::Error,
+                            >| println!("events : {:?}", events),
+                        );
                     Ok(())
                 })
                 .map_err(|_| ());
-
-            tokio::run(task);
+            tokio::run(block_events);
         }
         ("interchain-message", Some(matches)) => {
             let suri = matches
