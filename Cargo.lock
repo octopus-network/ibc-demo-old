@@ -2816,6 +2816,7 @@ dependencies = [
  "node-primitives 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=37558193cd3b8db50ad4fe5a1071bf324358ac53)",
  "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "srml-system 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=37558193cd3b8db50ad4fe5a1071bf324358ac53)",
+ "substrate-keyring 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=37558193cd3b8db50ad4fe5a1071bf324358ac53)",
  "substrate-primitives 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=37558193cd3b8db50ad4fe5a1071bf324358ac53)",
  "substrate-rpc 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=37558193cd3b8db50ad4fe5a1071bf324358ac53)",
  "substrate-subxt 0.1.0 (git+https://github.com/en/substrate-subxt.git?branch=ibc-demo)",

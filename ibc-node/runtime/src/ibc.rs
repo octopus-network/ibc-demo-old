@@ -69,6 +69,12 @@ decl_module! {
             Self::deposit_event(RawEvent::InterchainMessageSent(id, message));
             Ok(())
         }
+
+        fn ibc_packet(origin, message: Vec<u8>) -> Result {
+            ensure_signed(origin)?;
+            Self::deposit_event(RawEvent::IbcPacketReceived(message));
+            Ok(())
+        }
     }
 }
 
@@ -82,6 +88,7 @@ decl_event!(
         // To emit this event, we call the deposit funtion, from our runtime funtions
         SomethingStored(u32, AccountId),
         InterchainMessageSent(ParaId, Vec<u8>),
+        IbcPacketReceived(Vec<u8>),
     }
 );
 

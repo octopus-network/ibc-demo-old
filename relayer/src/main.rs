@@ -3,8 +3,11 @@ use codec::{Decode, Encode};
 use futures::stream::Stream;
 use futures::Future;
 use hyper::rt;
-use ibc_node_runtime::{self, ibc::Call as IbcCall, ibc::ParaId, Call, UncheckedExtrinsic};
+use ibc_node_runtime::{
+    self, ibc::Call as IbcCall, ibc::ParaId, ibc::RawEvent as IbcEvent, Call, UncheckedExtrinsic,
+};
 use jsonrpc_core_client::{transports::http, RpcError};
+use keyring::AccountKeyring;
 use node_primitives::{Hash, Index};
 use primitives::{
     blake2_256,
@@ -111,7 +114,7 @@ fn execute(matches: clap::ArgMatches) {
                             data.as_ref().map(|data| Decode::decode(&mut &data.0[..]))
                         })
                         .for_each(
-                            |events: Result<
+                            |result: Result<
                                 Vec<
                                     system::EventRecord<
                                         <Runtime as System>::Event,
@@ -119,7 +122,19 @@ fn execute(matches: clap::ArgMatches) {
                                     >,
                                 >,
                                 codec::Error,
-                            >| println!("events : {:?}", events),
+                            >| {
+                                let _ = result.map(|events| {
+                                    events.iter().for_each(|event| match &event.event {
+                                        ibc_node_runtime::Event::ibc(
+                                            IbcEvent::InterchainMessageSent(id, message),
+                                        ) => {
+                                            println!("id: {}, message: {:?}", id, message);
+                                            // TODO: find the corresponding genesis_hash and rpc address according to para_id
+                                        }
+                                        _ => {}
+                                    })
+                                });
+                            },
                         );
                     Ok(())
                 })

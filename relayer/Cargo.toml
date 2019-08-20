@@ -46,3 +46,8 @@ rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
 git = 'https://github.com/paritytech/substrate.git'
 package = 'node-primitives'
 rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
+
+[dependencies.keyring]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-keyring'
+rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
