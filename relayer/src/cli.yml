@@ -31,12 +31,6 @@ subcommands:
   - start:
   - interchain-message:
       args:
-        - suri:
-            long: suri
-            short: s
-            help: The secret key URI.
-            takes_value: true
-            required: true
         - nonce:
             short: n
             long: nonce

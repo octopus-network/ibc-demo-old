@@ -1,22 +1,19 @@
 use clap::load_yaml;
-use codec::{Decode, Encode};
+use codec::Decode;
 use futures::stream::Stream;
 use futures::Future;
-use hyper::rt;
-use ibc_node_runtime::{
-    self, ibc::Call as IbcCall, ibc::ParaId, ibc::RawEvent as IbcEvent, Call, UncheckedExtrinsic,
-};
-use jsonrpc_core_client::{transports::http, RpcError};
+use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent};
 use keyring::AccountKeyring;
 use node_primitives::{Hash, Index};
-use primitives::{
-    blake2_256,
-    hexdisplay::HexDisplay,
-    sr25519::{self, Public as AddressPublic},
-    Pair,
+use primitives::{hexdisplay::HexDisplay, sr25519, Pair};
+use runtime_primitives::generic::Era;
+use substrate_subxt::{
+    srml::{
+        ibc::{Ibc, IbcXt},
+        system::System,
+    },
+    Client, ClientBuilder,
 };
-use rpc::author::AuthorClient;
-use substrate_subxt::{srml::system::System, Client, ClientBuilder};
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
@@ -58,49 +55,6 @@ fn execute(matches: clap::ArgMatches) {
                 "Using a genesis hash of {}",
                 HexDisplay::from(&genesis_hash.as_ref())
             );
-
-            let from = AddressPublic::from_raw(pair.public().0);
-            let signer = pair.clone();
-
-            let id: u32 = 0;
-            let head: Vec<u8> = [1, 2, 3].to_vec();
-
-            let function = Call::Ibc(IbcCall::set_heads(id, head));
-            let extra = |i: Index| {
-                (
-                    system::CheckGenesis::<ibc_node_runtime::Runtime>::new(),
-                    system::CheckNonce::<ibc_node_runtime::Runtime>::from(i),
-                )
-            };
-
-            let raw_payload = (function, extra(index), genesis_hash);
-            let signature = raw_payload.using_encoded(|payload| {
-                if payload.len() > 256 {
-                    signer.sign(&blake2_256(payload)[..])
-                } else {
-                    println!("Signing {}", HexDisplay::from(&payload));
-                    signer.sign(payload)
-                }
-            });
-            println!("Signature {:?}", signature);
-            let xt = UncheckedExtrinsic::new_signed(
-                raw_payload.0,
-                from.into(),
-                signature.into(),
-                extra(index),
-            )
-            .encode();
-
-            println!("0x{}", hex::encode(&xt));
-            rt::run(rt::lazy(|| {
-                let uri = "http://localhost:9933";
-
-                http::connect(uri)
-                    .and_then(|client: AuthorClient<Hash, Hash>| submit(client, xt))
-                    .map_err(|e| {
-                        println!("Error: {:?}", e);
-                    })
-            }))
         }
         ("start", Some(_matches)) => {
             let (mut rt, client) = setup();
@@ -116,7 +70,7 @@ fn execute(matches: clap::ArgMatches) {
                         .for_each(
                             |result: Result<
                                 Vec<
-                                    system::EventRecord<
+                                    srml_system::EventRecord<
                                         <Runtime as System>::Event,
                                         <Runtime as System>::Hash,
                                     >,
@@ -142,11 +96,6 @@ fn execute(matches: clap::ArgMatches) {
             tokio::run(block_events);
         }
         ("interchain-message", Some(matches)) => {
-            let suri = matches
-                .value_of("suri")
-                .expect("secret URI parameter is required; thus it can't be None; qed");
-            let pair = sr25519::Pair::from_string(suri, password).expect("Invalid phrase");
-
             let index = matches
                 .value_of("nonce")
                 .expect("nonce is required; thus it can't be None; qed");
@@ -177,82 +126,54 @@ fn execute(matches: clap::ArgMatches) {
                 .expect("message is required; thus it can't be None; qed");
             let message: Vec<u8> = hex::decode(message).expect("Invalid message");
 
-            let from = AddressPublic::from_raw(pair.public().0);
-            let signer = pair.clone();
+            let (mut rt, client) = setup();
 
-            let function = Call::Ibc(IbcCall::interchain_message(para_id, message));
-            let extra = |i: Index| {
-                (
-                    system::CheckGenesis::<ibc_node_runtime::Runtime>::new(),
-                    system::CheckNonce::<ibc_node_runtime::Runtime>::from(i),
-                )
-            };
+            let signer = AccountKeyring::Alice.pair();
+            let mut xt = rt.block_on(client.xt(signer, Some(index))).unwrap();
 
-            let raw_payload = (function, extra(index), genesis_hash);
-            let signature = raw_payload.using_encoded(|payload| {
-                if payload.len() > 256 {
-                    signer.sign(&blake2_256(payload)[..])
-                } else {
-                    println!("Signing {}", HexDisplay::from(&payload));
-                    signer.sign(payload)
-                }
-            });
-            println!("Signature {:?}", signature);
-            let xt = UncheckedExtrinsic::new_signed(
-                raw_payload.0,
-                from.into(),
-                signature.into(),
-                extra(index),
-            )
-            .encode();
-
-            println!("0x{}", hex::encode(&xt));
-            rt::run(rt::lazy(|| {
-                let uri = "http://localhost:9933";
-
-                http::connect(uri)
-                    .and_then(|client: AuthorClient<Hash, Hash>| submit(client, xt))
-                    .map_err(|e| {
-                        println!("Error: {:?}", e);
-                    })
-            }))
+            let transfer = xt
+                .increment_nonce()
+                .ibc(|calls| calls.interchain_message(para_id, message))
+                .submit();
+            rt.block_on(transfer).unwrap();
         }
         _ => print_usage(&matches),
     }
 }
 
-fn submit(
-    client: AuthorClient<Hash, Hash>,
-    xt: Vec<u8>,
-) -> impl Future<Item = (), Error = RpcError> {
-    client.submit_extrinsic(xt.into()).map(|hash| {
-        println!("return hash: {:?}", hash);
-    })
-}
-
 struct Runtime;
 
 impl System for Runtime {
-    type Index = <ibc_node_runtime::Runtime as system::Trait>::Index;
-    type BlockNumber = <ibc_node_runtime::Runtime as system::Trait>::BlockNumber;
-    type Hash = <ibc_node_runtime::Runtime as system::Trait>::Hash;
-    type Hashing = <ibc_node_runtime::Runtime as system::Trait>::Hashing;
-    type AccountId = <ibc_node_runtime::Runtime as system::Trait>::AccountId;
-    type Lookup = <ibc_node_runtime::Runtime as system::Trait>::Lookup;
-    type Header = <ibc_node_runtime::Runtime as system::Trait>::Header;
-    type Event = <ibc_node_runtime::Runtime as system::Trait>::Event;
+    type Index = <ibc_node_runtime::Runtime as srml_system::Trait>::Index;
+    type BlockNumber = <ibc_node_runtime::Runtime as srml_system::Trait>::BlockNumber;
+    type Hash = <ibc_node_runtime::Runtime as srml_system::Trait>::Hash;
+    type Hashing = <ibc_node_runtime::Runtime as srml_system::Trait>::Hashing;
+    type AccountId = <ibc_node_runtime::Runtime as srml_system::Trait>::AccountId;
+    type Lookup = <ibc_node_runtime::Runtime as srml_system::Trait>::Lookup;
+    type Header = <ibc_node_runtime::Runtime as srml_system::Trait>::Header;
+    type Event = <ibc_node_runtime::Runtime as srml_system::Trait>::Event;
 
     type SignedExtra = (
-        system::CheckGenesis<ibc_node_runtime::Runtime>,
-        system::CheckNonce<ibc_node_runtime::Runtime>,
+        srml_system::CheckVersion<ibc_node_runtime::Runtime>,
+        srml_system::CheckGenesis<ibc_node_runtime::Runtime>,
+        srml_system::CheckEra<ibc_node_runtime::Runtime>,
+        srml_system::CheckNonce<ibc_node_runtime::Runtime>,
+        srml_system::CheckWeight<ibc_node_runtime::Runtime>,
+        srml_balances::TakeFees<ibc_node_runtime::Runtime>,
     );
     fn extra(nonce: Self::Index) -> Self::SignedExtra {
         (
-            system::CheckGenesis::<ibc_node_runtime::Runtime>::new(),
-            system::CheckNonce::<ibc_node_runtime::Runtime>::from(nonce),
+            srml_system::CheckVersion::<ibc_node_runtime::Runtime>::new(),
+            srml_system::CheckGenesis::<ibc_node_runtime::Runtime>::new(),
+            srml_system::CheckEra::<ibc_node_runtime::Runtime>::from(Era::Immortal),
+            srml_system::CheckNonce::<ibc_node_runtime::Runtime>::from(nonce),
+            srml_system::CheckWeight::<ibc_node_runtime::Runtime>::new(),
+            srml_balances::TakeFees::<ibc_node_runtime::Runtime>::from(0),
         )
     }
 }
+
+impl Ibc for Runtime {}
 
 fn setup() -> (tokio::runtime::Runtime, Client<Runtime>) {
     env_logger::try_init().ok();

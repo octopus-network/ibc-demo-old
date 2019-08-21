@@ -11,14 +11,12 @@ path = 'src/main.rs'
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-futures = '0.1'
-hyper = "0.12"
-jsonrpc-core-client = { version = "12.0.0", features = ["http", "ws"] }
-hex = "0.3"
-clap = { version = "~2.32", features = ["yaml"] }
-tokio = "0.1"
 env_logger = "0.6"
-substrate-subxt = { git="https://github.com/en/substrate-subxt.git", branch="ibc-demo" }
+clap = { version = "~2.32", features = ["yaml"] }
+futures = '0.1'
+substrate-subxt = { git="https://github.com/en/substrate-subxt.git", branch="ibc-demo-50e22e1" }
+hex = "0.3"
+tokio = "0.1"
 
 [dependencies.codec]
 package = 'parity-scale-codec'
@@ -27,27 +25,32 @@ version = '1.0.0'
 [dependencies.ibc-node-runtime]
 path = '../ibc-node/runtime'
 
+[dependencies.keyring]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-keyring'
+rev = '50e22e177950076b4704d320635e44a87f7b9df7'
+
 [dependencies.primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
-
-[dependencies.rpc]
-git = 'https://github.com/paritytech/substrate.git'
-package = 'substrate-rpc'
-rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
-
-[dependencies.system]
-git = 'https://github.com/paritytech/substrate.git'
-package = 'srml-system'
-rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
+rev = '50e22e177950076b4704d320635e44a87f7b9df7'
 
 [dependencies.node-primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'node-primitives'
-rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
+rev = '50e22e177950076b4704d320635e44a87f7b9df7'
 
-[dependencies.keyring]
+[dependencies.srml-system]
 git = 'https://github.com/paritytech/substrate.git'
-package = 'substrate-keyring'
-rev = '37558193cd3b8db50ad4fe5a1071bf324358ac53'
+package = 'srml-system'
+rev = '50e22e177950076b4704d320635e44a87f7b9df7'
+
+[dependencies.srml-balances]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-balances'
+rev = '50e22e177950076b4704d320635e44a87f7b9df7'
+
+[dependencies.runtime-primitives]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-primitives'
+rev = '50e22e177950076b4704d320635e44a87f7b9df7'
