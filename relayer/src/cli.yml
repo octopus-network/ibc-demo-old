@@ -37,12 +37,6 @@ subcommands:
             help: The nonce.
             takes_value: true
             required: true
-        - genesis:
-            short: g
-            long: genesis
-            help: The genesis hash.
-            takes_value: true
-            required: true
         - para-id:
             short: p
             long: para-id

@@ -84,6 +84,18 @@ fn execute(matches: clap::ArgMatches) {
                                         ) => {
                                             println!("id: {}, message: {:?}", id, message);
                                             // TODO: find the corresponding genesis_hash and rpc address according to para_id
+                                            let index = 0;
+                                            let (mut rt, client) = setup();
+
+                                            let signer = AccountKeyring::Bob.pair();
+                                            let xt = rt
+                                                .block_on(client.xt(signer, Some(index)))
+                                                .unwrap();
+
+                                            let ibc_packet = xt
+                                                .ibc(|calls| calls.ibc_packet(message.to_vec()))
+                                                .submit();
+                                            rt.block_on(ibc_packet).unwrap();
                                         }
                                         _ => {}
                                     })
@@ -102,19 +114,6 @@ fn execute(matches: clap::ArgMatches) {
             let index = str::parse::<Index>(index)
                 .expect("Invalid 'nonce' parameter; expecting an integer.");
 
-            let genesis_hash = matches
-                .value_of("genesis")
-                .expect("genesis is required; thus it can't be None; qed");
-            let genesis_hash: Hash = hex::decode(genesis_hash)
-                .ok()
-                .and_then(|x| Decode::decode(&mut &x[..]).ok())
-                .expect("Invalid genesis hash");
-
-            println!(
-                "Using a genesis hash of {}",
-                HexDisplay::from(&genesis_hash.as_ref())
-            );
-
             let para_id = matches
                 .value_of("para-id")
                 .expect("para-id is required; thus it can't be None; qed");
@@ -129,12 +128,12 @@ fn execute(matches: clap::ArgMatches) {
             let (mut rt, client) = setup();
 
             let signer = AccountKeyring::Alice.pair();
-            let mut xt = rt.block_on(client.xt(signer, Some(index))).unwrap();
+            let xt = rt.block_on(client.xt(signer, Some(index))).unwrap();
 
-            let transfer = xt
+            let interchain_message = xt
                 .ibc(|calls| calls.interchain_message(para_id, message))
                 .submit();
-            rt.block_on(transfer).unwrap();
+            rt.block_on(interchain_message).unwrap();
         }
         _ => print_usage(&matches),
     }
