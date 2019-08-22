@@ -7,6 +7,7 @@ use keyring::AccountKeyring;
 use node_primitives::{Hash, Index};
 use primitives::{hexdisplay::HexDisplay, sr25519, Pair};
 use runtime_primitives::generic::Era;
+use std::thread;
 use substrate_subxt::{
     srml::{
         ibc::{Ibc, IbcXt},
@@ -78,24 +79,26 @@ fn execute(matches: clap::ArgMatches) {
                                 codec::Error,
                             >| {
                                 let _ = result.map(|events| {
-                                    events.iter().for_each(|event| match &event.event {
+                                    events.into_iter().for_each(|event| match event.event {
                                         ibc_node_runtime::Event::ibc(
                                             IbcEvent::InterchainMessageSent(id, message),
                                         ) => {
                                             println!("id: {}, message: {:?}", id, message);
-                                            // TODO: find the corresponding genesis_hash and rpc address according to para_id
-                                            let index = 0;
-                                            let (mut rt, client) = setup();
+                                            // TODO: find the corresponding rpc address according to para_id
+                                            thread::spawn(move || {
+                                                let index = 0;
+                                                let (mut rt, client) = setup();
 
-                                            let signer = AccountKeyring::Bob.pair();
-                                            let xt = rt
-                                                .block_on(client.xt(signer, Some(index)))
-                                                .unwrap();
+                                                let signer = AccountKeyring::Bob.pair();
+                                                let xt = rt
+                                                    .block_on(client.xt(signer, Some(index)))
+                                                    .unwrap();
 
-                                            let ibc_packet = xt
-                                                .ibc(|calls| calls.ibc_packet(message.to_vec()))
-                                                .submit();
-                                            rt.block_on(ibc_packet).unwrap();
+                                                let ibc_packet = xt
+                                                    .ibc(|calls| calls.ibc_packet(message.to_vec()))
+                                                    .submit();
+                                                rt.block_on(ibc_packet).unwrap();
+                                            });
                                         }
                                         _ => {}
                                     })
