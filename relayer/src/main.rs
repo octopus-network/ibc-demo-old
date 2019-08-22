@@ -132,7 +132,6 @@ fn execute(matches: clap::ArgMatches) {
             let mut xt = rt.block_on(client.xt(signer, Some(index))).unwrap();
 
             let transfer = xt
-                .increment_nonce()
                 .ibc(|calls| calls.interchain_message(para_id, message))
                 .submit();
             rt.block_on(transfer).unwrap();
