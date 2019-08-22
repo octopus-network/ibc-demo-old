@@ -154,7 +154,7 @@ impl System for Runtime {
     type Event = <ibc_node_runtime::Runtime as srml_system::Trait>::Event;
 
     type SignedExtra = (
-        srml_system::CheckVersion<ibc_node_runtime::Runtime>,
+        // srml_system::CheckVersion<ibc_node_runtime::Runtime>,
         srml_system::CheckGenesis<ibc_node_runtime::Runtime>,
         srml_system::CheckEra<ibc_node_runtime::Runtime>,
         srml_system::CheckNonce<ibc_node_runtime::Runtime>,
@@ -163,7 +163,7 @@ impl System for Runtime {
     );
     fn extra(nonce: Self::Index) -> Self::SignedExtra {
         (
-            srml_system::CheckVersion::<ibc_node_runtime::Runtime>::new(),
+            // srml_system::CheckVersion::<ibc_node_runtime::Runtime>::new(),
             srml_system::CheckGenesis::<ibc_node_runtime::Runtime>::new(),
             srml_system::CheckEra::<ibc_node_runtime::Runtime>::from(Era::Immortal),
             srml_system::CheckNonce::<ibc_node_runtime::Runtime>::from(nonce),
