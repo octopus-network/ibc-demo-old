@@ -1,14 +1,103 @@
-[package]
-authors = ["Yuanchao Sun <yuanchao.sun@gmail.com>"]
-edition = '2018'
-name = 'ibc-demo'
-version = "0.1.0"
+[[bin]]
+name = 'ibc-node'
+path = 'src/main.rs'
 
+[build-dependencies]
+vergen = '3'
 [profile.release]
 panic = 'unwind'
 
 [workspace]
-members = [
-    "ibc-node",
-    "relayer",
-]
+members = ['runtime', 'relayer']
+
+[dependencies]
+derive_more = '0.14.0'
+exit-future = '0.1'
+futures = '0.1'
+log = '0.4'
+parking_lot = '0.9.0'
+tokio = '0.1'
+trie-root = '0.15.2'
+
+[dependencies.babe]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-consensus-babe'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.babe-primitives]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-consensus-babe-primitives'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.basic-authorship]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-basic-authorship'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.codec]
+package = 'parity-scale-codec'
+version = '1.0.0'
+
+[dependencies.ctrlc]
+features = ['termination']
+version = '3.0'
+
+[dependencies.grandpa]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-finality-grandpa'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.grandpa-primitives]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-finality-grandpa-primitives'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.inherents]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-inherents'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.network]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-network'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.ibc-node-runtime]
+path = 'runtime'
+
+[dependencies.primitives]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-primitives'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.sr-io]
+git = 'https://github.com/paritytech/substrate.git'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.substrate-cli]
+git = 'https://github.com/paritytech/substrate.git'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.substrate-client]
+git = 'https://github.com/paritytech/substrate.git'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.substrate-executor]
+git = 'https://github.com/paritytech/substrate.git'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.substrate-service]
+git = 'https://github.com/paritytech/substrate.git'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[dependencies.transaction-pool]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-transaction-pool'
+rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+
+[package]
+authors = ['ys']
+build = 'build.rs'
+edition = '2018'
+name = 'ibc-node'
+version = '2.0.0'
