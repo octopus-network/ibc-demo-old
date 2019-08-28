@@ -2874,6 +2874,7 @@ dependencies = [
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ibc-node-runtime 2.0.0",
  "node-primitives 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=223770a8abc645ff87b50e4226d236aeb48067d5)",

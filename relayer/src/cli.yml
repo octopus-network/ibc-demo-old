@@ -8,6 +8,7 @@ args:
       required: false
       help: The password for the key
 subcommands:
+  - run:
   - set-heads:
       args:
         - suri:
@@ -28,7 +29,6 @@ subcommands:
             help: The genesis hash.
             takes_value: true
             required: true
-  - start:
   - interchain-message:
       args:
         - nonce:

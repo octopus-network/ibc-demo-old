@@ -18,7 +18,7 @@ $ ./target/release/ibc-node --dev
 ### start a relayer process
 
 ```bash
-$ ./target/release/relayer start
+$ ./target/release/relayer run
 ```
 
 ### send an interchain message

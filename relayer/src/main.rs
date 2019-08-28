@@ -7,7 +7,6 @@ use keyring::AccountKeyring;
 use node_primitives::{Hash, Index};
 use primitives::{hexdisplay::HexDisplay, sr25519, Pair};
 use runtime_primitives::generic::Era;
-use std::thread;
 use substrate_subxt::{
     srml::{
         ibc::{Ibc, IbcXt},
@@ -57,11 +56,15 @@ fn execute(matches: clap::ArgMatches) {
                 HexDisplay::from(&genesis_hash.as_ref())
             );
         }
-        ("start", Some(_matches)) => {
-            let (mut rt, client) = setup();
+        ("run", Some(_matches)) => {
+            let mut rt = tokio::runtime::Runtime::new().unwrap();
+            let client_future = ClientBuilder::<Runtime>::new().build();
+            let client = rt.block_on(client_future).unwrap();
+
             let stream = rt.block_on(client.subscribe_events()).unwrap();
+            let executor = rt.executor();
             let block_events = stream
-                .for_each(|change_set| {
+                .for_each(move |change_set| {
                     change_set
                         .changes
                         .iter()
@@ -85,20 +88,23 @@ fn execute(matches: clap::ArgMatches) {
                                         ) => {
                                             println!("id: {}, message: {:?}", id, message);
                                             // TODO: find the corresponding rpc address according to para_id
-                                            thread::spawn(move || {
-                                                let index = 0;
-                                                let (mut rt, client) = setup();
+                                            let index = 0;
+                                            let signer = AccountKeyring::Bob.pair();
+                                            let ibc_packet = ClientBuilder::<Runtime>::new()
+                                                .build()
+                                                .and_then(move |client| {
+                                                    client.xt(signer, Some(index))
+                                                })
+                                                .and_then(move |xt| {
+                                                    xt.ibc(|calls| {
+                                                        calls.ibc_packet(message.to_vec())
+                                                    })
+                                                    .submit()
+                                                })
+                                                .map(|_| ())
+                                                .map_err(|_| ());
 
-                                                let signer = AccountKeyring::Bob.pair();
-                                                let xt = rt
-                                                    .block_on(client.xt(signer, Some(index)))
-                                                    .unwrap();
-
-                                                let ibc_packet = xt
-                                                    .ibc(|calls| calls.ibc_packet(message.to_vec()))
-                                                    .submit();
-                                                rt.block_on(ibc_packet).unwrap();
-                                            });
+                                            executor.spawn(ibc_packet);
                                         }
                                         _ => {}
                                     })
@@ -108,7 +114,8 @@ fn execute(matches: clap::ArgMatches) {
                     Ok(())
                 })
                 .map_err(|_| ());
-            tokio::run(block_events);
+            rt.spawn(block_events);
+            rt.shutdown_on_idle().wait().unwrap();
         }
         ("interchain-message", Some(matches)) => {
             let index = matches
