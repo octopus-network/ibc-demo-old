@@ -14,7 +14,7 @@ path = 'src/main.rs'
 env_logger = "0.6"
 clap = { version = "~2.32", features = ["yaml"] }
 futures = '0.1'
-substrate-subxt = { git="https://github.com/en/substrate-subxt.git", branch="ibc-demo-223770a" }
+substrate-subxt = { git="https://github.com/en/substrate-subxt.git", branch="ibc-demo" }
 hex = "0.3"
 tokio = "0.1"
 

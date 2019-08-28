@@ -2883,7 +2883,7 @@ dependencies = [
  "srml-system 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=223770a8abc645ff87b50e4226d236aeb48067d5)",
  "substrate-keyring 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=223770a8abc645ff87b50e4226d236aeb48067d5)",
  "substrate-primitives 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=223770a8abc645ff87b50e4226d236aeb48067d5)",
- "substrate-subxt 0.1.0 (git+https://github.com/en/substrate-subxt.git?branch=ibc-demo-223770a)",
+ "substrate-subxt 0.1.0 (git+https://github.com/en/substrate-subxt.git?branch=ibc-demo)",
  "tokio 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -4244,7 +4244,7 @@ dependencies = [
 [[package]]
 name = "substrate-subxt"
 version = "0.1.0"
-source = "git+https://github.com/en/substrate-subxt.git?branch=ibc-demo-223770a#7b27609b53ae2da4dd6c6e0aeaa040a8d770655f"
+source = "git+https://github.com/en/substrate-subxt.git?branch=ibc-demo#0dfda1f88a3711f46659954d142f762c81060864"
 dependencies = [
  "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5593,7 +5593,7 @@ dependencies = [
 "checksum substrate-session 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=223770a8abc645ff87b50e4226d236aeb48067d5)" = "<none>"
 "checksum substrate-state-db 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=223770a8abc645ff87b50e4226d236aeb48067d5)" = "<none>"
 "checksum substrate-state-machine 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=223770a8abc645ff87b50e4226d236aeb48067d5)" = "<none>"
-"checksum substrate-subxt 0.1.0 (git+https://github.com/en/substrate-subxt.git?branch=ibc-demo-223770a)" = "<none>"
+"checksum substrate-subxt 0.1.0 (git+https://github.com/en/substrate-subxt.git?branch=ibc-demo)" = "<none>"
 "checksum substrate-telemetry 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=223770a8abc645ff87b50e4226d236aeb48067d5)" = "<none>"
 "checksum substrate-transaction-graph 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=223770a8abc645ff87b50e4226d236aeb48067d5)" = "<none>"
 "checksum substrate-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=223770a8abc645ff87b50e4226d236aeb48067d5)" = "<none>"
