@@ -18,6 +18,7 @@ hex = "0.3"
 tokio = { version = "0.1.11" }
 futures = "0.1.17"
 futures03 = { package = "futures-preview", version = "=0.3.0-alpha.17", features = ["compat"] }
+url = "1.7"
 
 [dependencies.codec]
 package = 'parity-scale-codec'

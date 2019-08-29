@@ -14,6 +14,7 @@ use substrate_subxt::{
     },
     Client, ClientBuilder,
 };
+use url::Url;
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
@@ -56,9 +57,18 @@ fn execute(matches: clap::ArgMatches) {
                 HexDisplay::from(&genesis_hash.as_ref())
             );
         }
-        ("run", Some(_matches)) => {
+        ("run", Some(matches)) => {
+            let addr1 = matches
+                .value_of("addr1")
+                .expect("The address of chain A is required; thus it can't be None; qed");
+            let addr1 = Url::parse(&format!("ws://{}", addr1)).expect("Is valid url; qed");
+            let addr2 = matches
+                .value_of("addr2")
+                .expect("The address of chain B is required; thus it can't be None; qed");
+            let addr2 = Url::parse(&format!("ws://{}", addr2)).expect("Is valid url; qed");
+
             let mut rt = tokio::runtime::Runtime::new().unwrap();
-            let client_future = ClientBuilder::<Runtime>::new().build();
+            let client_future = ClientBuilder::<Runtime>::new().set_url(addr1).build();
             let client = rt.block_on(client_future).unwrap();
 
             let stream = rt.block_on(client.subscribe_events()).unwrap();
@@ -91,6 +101,7 @@ fn execute(matches: clap::ArgMatches) {
                                             let index = 0;
                                             let signer = AccountKeyring::Bob.pair();
                                             let ibc_packet = ClientBuilder::<Runtime>::new()
+                                                .set_url(addr2.clone())
                                                 .build()
                                                 .and_then(move |client| {
                                                     client.xt(signer, Some(index))

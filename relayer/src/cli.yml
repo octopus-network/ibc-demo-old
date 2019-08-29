@@ -9,6 +9,17 @@ args:
       help: The password for the key
 subcommands:
   - run:
+      args:
+        - addr1:
+            long: addr1
+            help: The address of Chain A.
+            takes_value: true
+            required: true
+        - addr2:
+            long: addr2
+            help: The address of Chain B.
+            takes_value: true
+            required: true
   - set-heads:
       args:
         - suri:
