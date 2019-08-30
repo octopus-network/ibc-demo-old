@@ -98,14 +98,11 @@ fn execute(matches: clap::ArgMatches) {
                                         ) => {
                                             println!("id: {}, message: {:?}", id, message);
                                             // TODO: find the corresponding rpc address according to para_id
-                                            let index = 0;
                                             let signer = AccountKeyring::Bob.pair();
                                             let ibc_packet = ClientBuilder::<Runtime>::new()
                                                 .set_url(addr2.clone())
                                                 .build()
-                                                .and_then(move |client| {
-                                                    client.xt(signer, Some(index))
-                                                })
+                                                .and_then(move |client| client.xt(signer, None))
                                                 .and_then(move |xt| {
                                                     xt.ibc(|calls| {
                                                         calls.ibc_packet(message.to_vec())
@@ -113,7 +110,7 @@ fn execute(matches: clap::ArgMatches) {
                                                     .submit()
                                                 })
                                                 .map(|_| ())
-                                                .map_err(|_| ());
+                                                .map_err(|e| println!("{:?}", e));
 
                                             executor.spawn(ibc_packet);
                                         }
@@ -124,17 +121,11 @@ fn execute(matches: clap::ArgMatches) {
                         );
                     Ok(())
                 })
-                .map_err(|_| ());
+                .map_err(|e| println!("{:?}", e));
             rt.spawn(block_events);
             rt.shutdown_on_idle().wait().unwrap();
         }
         ("interchain-message", Some(matches)) => {
-            let index = matches
-                .value_of("nonce")
-                .expect("nonce is required; thus it can't be None; qed");
-            let index = str::parse::<Index>(index)
-                .expect("Invalid 'nonce' parameter; expecting an integer.");
-
             let para_id = matches
                 .value_of("para-id")
                 .expect("para-id is required; thus it can't be None; qed");
@@ -149,7 +140,7 @@ fn execute(matches: clap::ArgMatches) {
             let (mut rt, client) = setup();
 
             let signer = AccountKeyring::Alice.pair();
-            let xt = rt.block_on(client.xt(signer, Some(index))).unwrap();
+            let xt = rt.block_on(client.xt(signer, None)).unwrap();
 
             let interchain_message = xt
                 .ibc(|calls| calls.interchain_message(para_id, message))

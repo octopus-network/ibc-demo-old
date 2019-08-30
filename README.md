@@ -25,5 +25,5 @@ $ ./target/release/relayer run --addr1 127.0.0.1:9944 --addr2 127.0.0.1:9945
 ### send an interchain message to chain A
 
 ```bash
-$ ./target/release/relayer interchain-message --message 01020304 --nonce 0 --para-id 0
+$ ./target/release/relayer interchain-message --message 01020304 --para-id 0
 ```

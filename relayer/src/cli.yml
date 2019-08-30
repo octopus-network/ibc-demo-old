@@ -42,12 +42,6 @@ subcommands:
             required: true
   - interchain-message:
       args:
-        - nonce:
-            short: n
-            long: nonce
-            help: The nonce.
-            takes_value: true
-            required: true
         - para-id:
             short: p
             long: para-id
