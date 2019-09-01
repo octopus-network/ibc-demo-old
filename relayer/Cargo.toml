@@ -30,29 +30,29 @@ path = '../runtime'
 [dependencies.keyring]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-keyring'
-rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
 
 [dependencies.primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
 
 [dependencies.node-primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'node-primitives'
-rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
 
 [dependencies.srml-system]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-system'
-rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
 
 [dependencies.srml-balances]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-balances'
-rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
 
 [dependencies.runtime-primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
-rev = '223770a8abc645ff87b50e4226d236aeb48067d5'
+rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'

@@ -20,8 +20,7 @@ use transaction_pool::{self, txpool::Pool as TransactionPool};
 native_executor_instance!(
 	pub Executor,
 	ibc_node_runtime::api::dispatch,
-	ibc_node_runtime::native_version,
-	WASM_BINARY
+	ibc_node_runtime::native_version
 );
 
 construct_simple_protocol! {
@@ -44,11 +43,8 @@ macro_rules! new_full_start {
             ibc_node_runtime::RuntimeApi,
             crate::service::Executor,
         >($config)?
-        .with_select_chain(|_config, client| {
-            #[allow(deprecated)]
-            Ok(substrate_client::LongestChain::new(
-                client.backend().clone(),
-            ))
+        .with_select_chain(|_config, backend| {
+            Ok(substrate_client::LongestChain::new(backend.clone()))
         })?
         .with_transaction_pool(|config, client| {
             Ok(transaction_pool::txpool::Pool::new(
@@ -98,13 +94,18 @@ macro_rules! new_full_start {
 pub fn new_full<C: Send + Default + 'static>(
     config: Configuration<C, GenesisConfig>,
 ) -> Result<impl AbstractService, ServiceError> {
+    let is_authority = config.roles.is_authority();
+    let name = config.name.clone();
+    let disable_grandpa = config.disable_grandpa;
+    let force_authoring = config.force_authoring;
+
     let (builder, mut import_setup, inherent_data_providers, mut tasks_to_spawn) =
         new_full_start!(config);
 
     let service = builder
         .with_network_protocol(|_| Ok(NodeProtocol::new()))?
-        .with_finality_proof_provider(|client| {
-            Ok(Arc::new(GrandpaFinalityProofProvider::new(client.clone(), client)) as _)
+        .with_finality_proof_provider(|client, backend| {
+            Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, client)) as _)
         })?
         .build()?;
 
@@ -119,7 +120,7 @@ pub fn new_full<C: Send + Default + 'static>(
         }
     }
 
-    if service.config().roles.is_authority() {
+    if is_authority {
         let proposer = basic_authorship::ProposerFactory {
             client: service.client(),
             transaction_pool: service.transaction_pool(),
@@ -139,7 +140,7 @@ pub fn new_full<C: Send + Default + 'static>(
             env: proposer,
             sync_oracle: service.network(),
             inherent_data_providers: inherent_data_providers.clone(),
-            force_authoring: service.config().force_authoring,
+            force_authoring: force_authoring,
             time_source: babe_link,
         };
 
@@ -151,22 +152,19 @@ pub fn new_full<C: Send + Default + 'static>(
         service.spawn_essential_task(select);
     }
 
-    let config = grandpa::Config {
+    let grandpa_config = grandpa::Config {
         // FIXME #1578 make this available through chainspec
         gossip_duration: Duration::from_millis(333),
         justification_period: 4096,
-        name: Some(service.config().name.clone()),
+        name: Some(name),
         keystore: Some(service.keystore()),
     };
 
-    match (
-        service.config().roles.is_authority(),
-        service.config().disable_grandpa,
-    ) {
+    match (is_authority, disable_grandpa) {
         (false, false) => {
             // start the lightweight GRANDPA observer
             service.spawn_task(Box::new(grandpa::run_grandpa_observer(
-                config,
+                grandpa_config,
                 link_half,
                 service.network(),
                 service.on_exit(),
@@ -174,8 +172,8 @@ pub fn new_full<C: Send + Default + 'static>(
         }
         (true, false) => {
             // start the full GRANDPA voter
-            let grandpa_config = grandpa::GrandpaParams {
-                config: config,
+            let voter_config = grandpa::GrandpaParams {
+                config: grandpa_config,
                 link: link_half,
                 network: service.network(),
                 inherent_data_providers: inherent_data_providers.clone(),
@@ -185,7 +183,7 @@ pub fn new_full<C: Send + Default + 'static>(
 
             // the GRANDPA voter task is considered infallible, i.e.
             // if it fails we take down the service with it.
-            service.spawn_essential_task(grandpa::run_grandpa_voter(grandpa_config)?);
+            service.spawn_essential_task(grandpa::run_grandpa_voter(voter_config)?);
         }
         (_, true) => {
             grandpa::setup_disabled_grandpa(
@@ -206,52 +204,52 @@ pub fn new_light<C: Send + Default + 'static>(
     let inherent_data_providers = InherentDataProviders::new();
 
     ServiceBuilder::new_light::<Block, RuntimeApi, Executor>(config)?
-        .with_select_chain(|_config, client| {
-            #[allow(deprecated)]
-            Ok(LongestChain::new(client.backend().clone()))
-        })?
+        .with_select_chain(|_config, backend| Ok(LongestChain::new(backend.clone())))?
         .with_transaction_pool(|config, client| {
             Ok(TransactionPool::new(
                 config,
                 transaction_pool::ChainApi::new(client),
             ))
         })?
-        .with_import_queue_and_fprb(|_config, client, _select_chain, transaction_pool| {
-            #[allow(deprecated)]
-            let fetch_checker = client
-                .backend()
-                .blockchain()
-                .fetcher()
-                .upgrade()
-                .map(|fetcher| fetcher.checker().clone())
-                .ok_or_else(|| "Trying to start light import queue without active fetch checker")?;
-            let block_import = grandpa::light_block_import::<_, _, _, RuntimeApi, _>(
-                client.clone(),
-                Arc::new(fetch_checker),
-                client.clone(),
-            )?;
+        .with_import_queue_and_fprb(
+            |_config, client, backend, _select_chain, transaction_pool| {
+                let fetch_checker = backend
+                    .blockchain()
+                    .fetcher()
+                    .upgrade()
+                    .map(|fetcher| fetcher.checker().clone())
+                    .ok_or_else(|| {
+                        "Trying to start light import queue without active fetch checker"
+                    })?;
+                let block_import = grandpa::light_block_import::<_, _, _, RuntimeApi, _>(
+                    client.clone(),
+                    backend,
+                    Arc::new(fetch_checker),
+                    client.clone(),
+                )?;
 
-            let finality_proof_import = block_import.clone();
-            let finality_proof_request_builder =
-                finality_proof_import.create_finality_proof_request_builder();
+                let finality_proof_import = block_import.clone();
+                let finality_proof_request_builder =
+                    finality_proof_import.create_finality_proof_request_builder();
 
-            // FIXME: pruning task isn't started since light client doesn't do `AuthoritySetup`.
-            let (import_queue, ..) = import_queue(
-                Config::get_or_compute(&*client)?,
-                block_import,
-                None,
-                Some(Box::new(finality_proof_import)),
-                client.clone(),
-                client,
-                inherent_data_providers.clone(),
-                Some(transaction_pool),
-            )?;
+                // FIXME: pruning task isn't started since light client doesn't do `AuthoritySetup`.
+                let (import_queue, ..) = import_queue(
+                    Config::get_or_compute(&*client)?,
+                    block_import,
+                    None,
+                    Some(Box::new(finality_proof_import)),
+                    client.clone(),
+                    client,
+                    inherent_data_providers.clone(),
+                    Some(transaction_pool),
+                )?;
 
-            Ok((import_queue, finality_proof_request_builder))
-        })?
+                Ok((import_queue, finality_proof_request_builder))
+            },
+        )?
         .with_network_protocol(|_| Ok(NodeProtocol::new()))?
-        .with_finality_proof_provider(|client| {
-            Ok(Arc::new(GrandpaFinalityProofProvider::new(client.clone(), client)) as _)
+        .with_finality_proof_provider(|client, backend| {
+            Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, client)) as _)
         })?
         .build()
 }
