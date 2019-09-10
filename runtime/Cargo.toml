@@ -3,32 +3,29 @@ authors = ['ys']
 edition = '2018'
 name = 'ibc-node-runtime'
 version = '2.0.0'
-[build-dependencies.wasm-builder-runner]
-package = 'substrate-wasm-builder-runner'
-version = '1.0.2'
 [dependencies.babe]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-babe'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.babe-primitives]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'substrate-consensus-babe-primitives'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.balances]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-balances'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.client]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'substrate-client'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.codec]
 default-features = false
@@ -38,45 +35,45 @@ version = '1.0.0'
 
 [dependencies.executive]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-executive'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.grandpa]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-grandpa'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.indices]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-indices'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.offchain-primitives]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'substrate-offchain-primitives'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.primitives]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'substrate-primitives'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.rstd]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'sr-std'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.runtime-io]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'sr-io'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.safe-mix]
 default-features = false
@@ -89,43 +86,46 @@ version = '1.0'
 
 [dependencies.sr-primitives]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+git = 'https://github.com/en/substrate.git'
+branch = 'ibc-demo'
 
 [dependencies.substrate-session]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+git = 'https://github.com/en/substrate.git'
+branch = 'ibc-demo'
 
 [dependencies.sudo]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-sudo'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.support]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-support'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.system]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-system'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.timestamp]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-timestamp'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.version]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'sr-version'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
+[build-dependencies.wasm-builder-runner]
+package = 'substrate-wasm-builder-runner'
+version = '1.0.2'
 
 [features]
 default = ['std']

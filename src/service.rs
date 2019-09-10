@@ -3,7 +3,7 @@
 use babe::{import_queue, start_babe, Config};
 use futures::prelude::*;
 use grandpa::{self, FinalityProofProvider as GrandpaFinalityProofProvider};
-use ibc_node_runtime::{self, opaque::Block, GenesisConfig, RuntimeApi, WASM_BINARY};
+use ibc_node_runtime::{self, opaque::Block, GenesisConfig, RuntimeApi};
 use inherents::InherentDataProviders;
 use network::construct_simple_protocol;
 use std::sync::Arc;

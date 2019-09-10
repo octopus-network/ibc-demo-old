@@ -28,52 +28,52 @@ version = '1.0.0'
 path = '../runtime'
 
 [dependencies.keyring]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'substrate-keyring'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.primitives]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'substrate-primitives'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.node-primitives]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'node-primitives'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.srml-system]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-system'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.srml-balances]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'srml-balances'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.runtime-primitives]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'sr-primitives'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.client]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'substrate-client'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.executor]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'substrate-executor'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 
 [dependencies.client-db]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'substrate-client-db'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'
 features = ["kvdb-rocksdb", "test-helpers"]
 
 [dependencies.test-client]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/en/substrate.git'
 package = 'substrate-test-client'
-rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+branch = 'ibc-demo'

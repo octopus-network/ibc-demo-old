@@ -12,7 +12,12 @@ use futures::Future;
 use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent, Block};
 use keyring::AccountKeyring;
 use node_primitives::{Hash, Index};
-use primitives::{hexdisplay::HexDisplay, sr25519, storage::well_known_keys, Pair};
+use primitives::{
+    hexdisplay::HexDisplay,
+    sr25519,
+    storage::{well_known_keys, StorageKey},
+    Pair,
+};
 use runtime_primitives::{generic::Era, traits::Header};
 use std::sync::Arc;
 use substrate_subxt::{
@@ -89,6 +94,8 @@ fn execute(matches: clap::ArgMatches) {
 
             let stream = rt.block_on(client.subscribe_finalized_blocks()).unwrap();
             // TODO
+            let read_proof =
+                rt.block_on(client.read_proof(StorageKey(well_known_keys::HEAP_PAGES.to_vec())));
             let db_storage = LightStorage::<Block>::new_test();
             let light_blockchain: Arc<Blockchain<LightStorage<Block>, LightFetcher>> =
                 client::light::new_light_blockchain(db_storage);
