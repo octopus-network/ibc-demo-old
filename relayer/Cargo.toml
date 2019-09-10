@@ -56,3 +56,24 @@ rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
 rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+
+[dependencies.client]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-client'
+rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+
+[dependencies.executor]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-executor'
+rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+
+[dependencies.client-db]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-client-db'
+rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'
+features = ["kvdb-rocksdb", "test-helpers"]
+
+[dependencies.test-client]
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-test-client'
+rev = '409f5aa10a32a7b18f1c5a5eded97d24181865dc'

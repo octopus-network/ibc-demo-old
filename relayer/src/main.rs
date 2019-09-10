@@ -1,12 +1,20 @@
 use clap::load_yaml;
+use client::{
+    // backend::NewBlockState, in_mem::Blockchain as InMemoryBlockchain,
+    light::blockchain::Blockchain,
+    light::fetcher::{FetchChecker, RemoteReadRequest},
+};
+use client_db::light::LightStorage;
 use codec::Decode;
+use executor::{native_executor_instance, NativeExecutor};
 use futures::stream::Stream;
 use futures::Future;
-use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent};
+use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent, Block};
 use keyring::AccountKeyring;
 use node_primitives::{Hash, Index};
-use primitives::{hexdisplay::HexDisplay, sr25519, Pair};
-use runtime_primitives::generic::Era;
+use primitives::{hexdisplay::HexDisplay, sr25519, storage::well_known_keys, Pair};
+use runtime_primitives::{generic::Era, traits::Header};
+use std::sync::Arc;
 use substrate_subxt::{
     srml::{
         ibc::{Ibc, IbcXt},
@@ -14,7 +22,14 @@ use substrate_subxt::{
     },
     Client, ClientBuilder,
 };
+use test_client::LightFetcher;
 use url::Url;
+
+native_executor_instance!(
+	pub Executor,
+	ibc_node_runtime::api::dispatch,
+	ibc_node_runtime::native_version
+);
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
@@ -68,11 +83,55 @@ fn execute(matches: clap::ArgMatches) {
             let addr2 = Url::parse(&format!("ws://{}", addr2)).expect("Is valid url; qed");
 
             let mut rt = tokio::runtime::Runtime::new().unwrap();
+            let executor = rt.executor();
             let client_future = ClientBuilder::<Runtime>::new().set_url(addr1).build();
             let client = rt.block_on(client_future).unwrap();
 
+            let stream = rt.block_on(client.subscribe_finalized_blocks()).unwrap();
+            // TODO
+            let db_storage = LightStorage::<Block>::new_test();
+            let light_blockchain: Arc<Blockchain<LightStorage<Block>, LightFetcher>> =
+                client::light::new_light_blockchain(db_storage);
+            // let local_storage = InMemoryBlockchain::<Block>::new();
+            let blocks = stream.for_each(move |block_header| {
+                let header_number = block_header.number();
+                let state_root = block_header.state_root();
+                let block_hash = block_header.hash();
+                println!("header_number: {:?}", header_number);
+                println!("state_root: {:?}", state_root);
+                println!("block_hash: {:?}", block_hash);
+                let local_executor = NativeExecutor::<Executor>::new(None);
+                let local_checker =
+                    client::light::new_fetch_checker(light_blockchain.clone(), local_executor);
+
+                let heap_pages = (&local_checker as &dyn FetchChecker<Block>)
+                    .check_read_proof(
+                        &RemoteReadRequest::<ibc_node_runtime::Header> {
+                            block: block_header.hash(),
+                            header: block_header,
+                            key: well_known_keys::HEAP_PAGES.to_vec(),
+                            retry_count: None,
+                        },
+                        // remote_read_proof,
+                        vec![vec![0]],
+                    )
+                    .unwrap()
+                    .unwrap()[0];
+                println!("heap_pages: {:?}", heap_pages);
+                // local_storage
+                //     .insert(
+                //         block_hash,
+                //         block_header.clone(),
+                //         None,
+                //         None,
+                //         NewBlockState::Final,
+                //     )
+                //     .unwrap();
+                Ok(())
+            });
+            executor.spawn(blocks.map_err(|_| ()));
+
             let stream = rt.block_on(client.subscribe_events()).unwrap();
-            let executor = rt.executor();
             let block_events = stream
                 .for_each(move |change_set| {
                     change_set
@@ -97,6 +156,30 @@ fn execute(matches: clap::ArgMatches) {
                                             IbcEvent::InterchainMessageSent(id, message),
                                         ) => {
                                             println!("id: {}, message: {:?}", id, message);
+
+                                            // TODO: remove this
+                                            // let local_executor =
+                                            //     NativeExecutor::<Executor>::new(None);
+                                            // let local_checker = client::light::new_fetch_checker(
+                                            //     light_blockchain.clone(),
+                                            //     local_executor,
+                                            // );
+
+                                            // let heap_pages = (&local_checker
+                                            //     as &dyn FetchChecker<Block>)
+                                            //     .check_read_proof(
+                                            //         &RemoteReadRequest::<ibc_node_runtime::Header> {
+                                            //             block: remote_block_header.hash(),
+                                            //             header: remote_block_header,
+                                            //             key: well_known_keys::HEAP_PAGES.to_vec(),
+                                            //             retry_count: None,
+                                            //         },
+                                            //         // remote_read_proof,
+                                            //         vec![vec![0]],
+                                            //     )
+                                            //     .unwrap()
+                                            //     .unwrap()[0];
+
                                             // TODO: find the corresponding rpc address according to para_id
                                             let signer = AccountKeyring::Bob.pair();
                                             let ibc_packet = ClientBuilder::<Runtime>::new()

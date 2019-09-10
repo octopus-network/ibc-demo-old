@@ -2873,9 +2873,13 @@ dependencies = [
  "sr-primitives 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
  "srml-balances 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
  "srml-system 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+ "substrate-client 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+ "substrate-client-db 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+ "substrate-executor 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
  "substrate-keyring 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
  "substrate-primitives 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
  "substrate-subxt 0.1.0 (git+https://github.com/en/substrate-subxt.git?branch=ibc-demo)",
+ "substrate-test-client 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
  "tokio 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 1.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -4295,6 +4299,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "substrate-test-client"
+version = "2.0.0"
+source = "git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc#409f5aa10a32a7b18f1c5a5eded97d24181865dc"
+dependencies = [
+ "futures-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-primitives 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+ "substrate-client 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+ "substrate-client-db 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+ "substrate-consensus-common 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+ "substrate-executor 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+ "substrate-keyring 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+ "substrate-primitives 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+ "substrate-state-machine 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)",
+]
+
+[[package]]
 name = "substrate-transaction-graph"
 version = "2.0.0"
 source = "git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc#409f5aa10a32a7b18f1c5a5eded97d24181865dc"
@@ -5603,6 +5625,7 @@ dependencies = [
 "checksum substrate-state-machine 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)" = "<none>"
 "checksum substrate-subxt 0.1.0 (git+https://github.com/en/substrate-subxt.git?branch=ibc-demo)" = "<none>"
 "checksum substrate-telemetry 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)" = "<none>"
+"checksum substrate-test-client 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)" = "<none>"
 "checksum substrate-transaction-graph 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)" = "<none>"
 "checksum substrate-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)" = "<none>"
 "checksum substrate-trie 2.0.0 (git+https://github.com/paritytech/substrate.git?rev=409f5aa10a32a7b18f1c5a5eded97d24181865dc)" = "<none>"
