@@ -1,3 +1,33 @@
+[build-dependencies.wasm-builder-runner]
+package = 'substrate-wasm-builder-runner'
+version = '1.0.2'
+
+[features]
+default = ['std']
+std = [
+    'codec/std',
+    'client/std',
+    'rstd/std',
+    'runtime-io/std',
+    'support/std',
+    'balances/std',
+    'babe/std',
+    'babe-primitives/std',
+    'executive/std',
+    'indices/std',
+    'grandpa/std',
+    'primitives/std',
+    'sr-primitives/std',
+    'system/std',
+    'timestamp/std',
+    'sudo/std',
+    'version/std',
+    'serde',
+    'safe-mix/std',
+    'offchain-primitives/std',
+    'substrate-session/std',
+]
+
 [package]
 authors = ['ys']
 edition = '2018'
@@ -123,33 +153,3 @@ default_features = false
 git = 'https://github.com/en/substrate.git'
 package = 'sr-version'
 branch = 'ibc-demo'
-[build-dependencies.wasm-builder-runner]
-package = 'substrate-wasm-builder-runner'
-version = '1.0.2'
-
-[features]
-default = ['std']
-no_std = []
-std = [
-    'codec/std',
-    'client/std',
-    'rstd/std',
-    'runtime-io/std',
-    'support/std',
-    'balances/std',
-    'babe/std',
-    'babe-primitives/std',
-    'executive/std',
-    'indices/std',
-    'grandpa/std',
-    'primitives/std',
-    'sr-primitives/std',
-    'system/std',
-    'timestamp/std',
-    'sudo/std',
-    'version/std',
-    'serde',
-    'safe-mix/std',
-    'offchain-primitives/std',
-    'substrate-session/std',
-]

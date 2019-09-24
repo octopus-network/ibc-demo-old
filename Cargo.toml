@@ -1,3 +1,20 @@
+[package]
+authors = ['ys']
+build = 'build.rs'
+edition = '2018'
+name = 'ibc-node'
+version = '2.0.0'
+
+[workspace]
+members = ['runtime', 'relayer']
+
+[[bin]]
+name = 'ibc-node'
+path = 'src/main.rs'
+
+[build-dependencies]
+vergen = '3'
+
 [dependencies]
 derive_more = '0.14.0'
 exit-future = '0.1'
@@ -82,22 +99,5 @@ branch = 'ibc-demo'
 git = 'https://github.com/en/substrate.git'
 package = 'substrate-transaction-pool'
 branch = 'ibc-demo'
-
-[package]
-authors = ['ys']
-build = 'build.rs'
-edition = '2018'
-name = 'ibc-node'
-version = '2.0.0'
-
-[[bin]]
-name = 'ibc-node'
-path = 'src/main.rs'
-
-[build-dependencies]
-vergen = '3'
 [profile.release]
 panic = 'unwind'
-
-[workspace]
-members = ['runtime', 'relayer']

@@ -27,7 +27,6 @@ use substrate_subxt::{
     },
     Client, ClientBuilder,
 };
-use test_client::LightFetcher;
 use url::Url;
 
 native_executor_instance!(
@@ -97,7 +96,7 @@ fn execute(matches: clap::ArgMatches) {
             let read_proof =
                 rt.block_on(client.read_proof(StorageKey(well_known_keys::HEAP_PAGES.to_vec())));
             let db_storage = LightStorage::<Block>::new_test();
-            let light_blockchain: Arc<Blockchain<LightStorage<Block>, LightFetcher>> =
+            let light_blockchain: Arc<Blockchain<LightStorage<Block>>> =
                 client::light::new_light_blockchain(db_storage);
             // let local_storage = InMemoryBlockchain::<Block>::new();
             let blocks = stream.for_each(move |block_header| {
@@ -116,12 +115,14 @@ fn execute(matches: clap::ArgMatches) {
                         &RemoteReadRequest::<ibc_node_runtime::Header> {
                             block: block_header.hash(),
                             header: block_header,
-                            key: well_known_keys::HEAP_PAGES.to_vec(),
+                            keys: vec![well_known_keys::HEAP_PAGES.to_vec()],
                             retry_count: None,
                         },
                         // remote_read_proof,
                         vec![vec![0]],
                     )
+                    .unwrap()
+                    .remove(well_known_keys::HEAP_PAGES)
                     .unwrap()
                     .unwrap()[0];
                 println!("heap_pages: {:?}", heap_pages);
