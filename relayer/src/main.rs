@@ -93,8 +93,9 @@ fn execute(matches: clap::ArgMatches) {
 
             let stream = rt.block_on(client.subscribe_finalized_blocks()).unwrap();
             // TODO
-            let read_proof =
-                rt.block_on(client.read_proof(StorageKey(well_known_keys::HEAP_PAGES.to_vec())));
+            let read_proof = rt
+                .block_on(client.read_proof(StorageKey(well_known_keys::HEAP_PAGES.to_vec())))
+                .unwrap();
             let db_storage = LightStorage::<Block>::new_test();
             let light_blockchain: Arc<Blockchain<LightStorage<Block>>> =
                 client::light::new_light_blockchain(db_storage);
@@ -110,21 +111,19 @@ fn execute(matches: clap::ArgMatches) {
                 let local_checker =
                     client::light::new_fetch_checker(light_blockchain.clone(), local_executor);
 
-                let heap_pages = (&local_checker as &dyn FetchChecker<Block>)
-                    .check_read_proof(
-                        &RemoteReadRequest::<ibc_node_runtime::Header> {
-                            block: block_header.hash(),
-                            header: block_header,
-                            keys: vec![well_known_keys::HEAP_PAGES.to_vec()],
-                            retry_count: None,
-                        },
-                        // remote_read_proof,
-                        vec![vec![0]],
-                    )
-                    .unwrap()
-                    .remove(well_known_keys::HEAP_PAGES)
-                    .unwrap()
-                    .unwrap()[0];
+                let heap_pages = (&local_checker as &dyn FetchChecker<Block>).check_read_proof(
+                    &RemoteReadRequest::<ibc_node_runtime::Header> {
+                        block: block_header.hash(),
+                        header: block_header,
+                        keys: vec![well_known_keys::HEAP_PAGES.to_vec()],
+                        retry_count: None,
+                    },
+                    read_proof.clone(),
+                );
+                // .unwrap()
+                // .remove(well_known_keys::HEAP_PAGES)
+                // .unwrap()
+                // .unwrap()[0];
                 println!("heap_pages: {:?}", heap_pages);
                 // local_storage
                 //     .insert(
