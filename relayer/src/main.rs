@@ -1,6 +1,5 @@
 use clap::load_yaml;
 use client::{
-    // backend::NewBlockState, in_mem::Blockchain as InMemoryBlockchain,
     light::blockchain::Blockchain,
     light::fetcher::{FetchChecker, RemoteReadRequest},
 };
@@ -19,7 +18,9 @@ use primitives::{
     Pair,
 };
 use runtime_primitives::{generic::Era, traits::Header};
+use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::Mutex;
 use substrate_subxt::{
     srml::{
         ibc::{Ibc, IbcXt},
@@ -77,6 +78,8 @@ fn execute(matches: clap::ArgMatches) {
             );
         }
         ("run", Some(matches)) => {
+            let headers = Arc::new(Mutex::new(HashMap::new()));
+
             let addr1 = matches
                 .value_of("addr1")
                 .expect("The address of chain A is required; thus it can't be None; qed");
@@ -92,14 +95,7 @@ fn execute(matches: clap::ArgMatches) {
             let client = rt.block_on(client_future).unwrap();
 
             let stream = rt.block_on(client.subscribe_finalized_blocks()).unwrap();
-            // TODO
-            let read_proof = rt
-                .block_on(client.read_proof(StorageKey(well_known_keys::HEAP_PAGES.to_vec())))
-                .unwrap();
-            let db_storage = LightStorage::<Block>::new_test();
-            let light_blockchain: Arc<Blockchain<LightStorage<Block>>> =
-                client::light::new_light_blockchain(db_storage);
-            // let local_storage = InMemoryBlockchain::<Block>::new();
+            let hs = headers.clone();
             let blocks = stream.for_each(move |block_header| {
                 let header_number = block_header.number();
                 let state_root = block_header.state_root();
@@ -107,38 +103,14 @@ fn execute(matches: clap::ArgMatches) {
                 println!("header_number: {:?}", header_number);
                 println!("state_root: {:?}", state_root);
                 println!("block_hash: {:?}", block_hash);
-                let local_executor = NativeExecutor::<Executor>::new(None);
-                let local_checker =
-                    client::light::new_fetch_checker(light_blockchain.clone(), local_executor);
-
-                let heap_pages = (&local_checker as &dyn FetchChecker<Block>).check_read_proof(
-                    &RemoteReadRequest::<ibc_node_runtime::Header> {
-                        block: block_header.hash(),
-                        header: block_header,
-                        keys: vec![well_known_keys::HEAP_PAGES.to_vec()],
-                        retry_count: None,
-                    },
-                    read_proof.clone(),
-                );
-                // .unwrap()
-                // .remove(well_known_keys::HEAP_PAGES)
-                // .unwrap()
-                // .unwrap()[0];
-                println!("heap_pages: {:?}", heap_pages);
-                // local_storage
-                //     .insert(
-                //         block_hash,
-                //         block_header.clone(),
-                //         None,
-                //         None,
-                //         NewBlockState::Final,
-                //     )
-                //     .unwrap();
+                let mut headers = hs.lock().unwrap();
+                headers.insert(block_hash, block_header);
                 Ok(())
             });
             executor.spawn(blocks.map_err(|_| ()));
 
             let stream = rt.block_on(client.subscribe_events()).unwrap();
+            let hs1 = headers.clone();
             let block_events = stream
                 .for_each(move |change_set| {
                     change_set
@@ -162,30 +134,75 @@ fn execute(matches: clap::ArgMatches) {
                                         ibc_node_runtime::Event::ibc(
                                             IbcEvent::InterchainMessageSent(id, message),
                                         ) => {
-                                            println!("id: {}, message: {:?}", id, message);
+                                            let block_hash = change_set.block.clone();
+                                            println!(
+                                                "block_hash: {:?}, id: {}, message: {:?}",
+                                                block_hash, id, message
+                                            );
 
-                                            // TODO: remove this
-                                            // let local_executor =
-                                            //     NativeExecutor::<Executor>::new(None);
-                                            // let local_checker = client::light::new_fetch_checker(
-                                            //     light_blockchain.clone(),
-                                            //     local_executor,
-                                            // );
-
-                                            // let heap_pages = (&local_checker
-                                            //     as &dyn FetchChecker<Block>)
-                                            //     .check_read_proof(
-                                            //         &RemoteReadRequest::<ibc_node_runtime::Header> {
-                                            //             block: remote_block_header.hash(),
-                                            //             header: remote_block_header,
-                                            //             key: well_known_keys::HEAP_PAGES.to_vec(),
-                                            //             retry_count: None,
-                                            //         },
-                                            //         // remote_read_proof,
-                                            //         vec![vec![0]],
-                                            //     )
-                                            //     .unwrap()
-                                            //     .unwrap()[0];
+                                            // TEST BEGIN
+                                            let headers = hs1.lock().unwrap();
+                                            match headers.iter().next() {
+                                                Some((block_hash, block_header)) => {
+                                                    let block_hash = block_hash.clone();
+                                                    let block_header = block_header.clone();
+                                                    let read_proof = client
+                                                        .read_proof(
+                                                            Some(block_hash.clone()),
+                                                            StorageKey(
+                                                                well_known_keys::HEAP_PAGES
+                                                                    .to_vec(),
+                                                            ),
+                                                        )
+                                                        .and_then(move |proof| {
+                                                            let db_storage =
+                                                                LightStorage::<Block>::new_test();
+                                                            let light_blockchain: Arc<
+                                                                Blockchain<LightStorage<Block>>,
+                                                            > = client::light::new_light_blockchain(
+                                                                db_storage,
+                                                            );
+                                                            let local_executor =
+                                                                NativeExecutor::<Executor>::new(
+                                                                    None,
+                                                                );
+                                                            let local_checker =
+                                                                client::light::new_fetch_checker(
+                                                                    light_blockchain.clone(),
+                                                                    local_executor,
+                                                                );
+                                                            let heap_pages = (&local_checker
+                                                                as &dyn FetchChecker<Block>)
+                                                                .check_read_proof(
+                                                                    &RemoteReadRequest::<
+                                                                        ibc_node_runtime::Header,
+                                                                    > {
+                                                                        block: block_header.hash(),
+                                                                        header: block_header
+                                                                            .clone(),
+                                                                        keys: vec![
+                                                                         well_known_keys::HEAP_PAGES
+                                                                             .to_vec(),
+                                                                     ],
+                                                                        retry_count: None,
+                                                                    },
+                                                                    proof,
+                                                                );
+                                                            println!(
+                                                                "heap_pages: {:?}",
+                                                                heap_pages
+                                                            );
+                                                            Ok(())
+                                                        });
+                                                    executor.spawn(
+                                                        read_proof
+                                                            .map(|_| ())
+                                                            .map_err(|e| println!("{:?}", e)),
+                                                    );
+                                                }
+                                                None => println!("header is not found."),
+                                            }
+                                            // TEST END
 
                                             // TODO: find the corresponding rpc address according to para_id
                                             let signer = AccountKeyring::Bob.pair();

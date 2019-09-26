@@ -4408,7 +4408,7 @@ dependencies = [
 [[package]]
 name = "substrate-subxt"
 version = "0.1.0"
-source = "git+https://github.com/en/substrate-subxt.git?branch=ibc-demo#3c5b9fa8eb4ff6381ba0108251dd5c95c4b3c4b1"
+source = "git+https://github.com/en/substrate-subxt.git?branch=ibc-demo#1cdf04ec50aa23c4f5a74a7702672ec6adffc356"
 dependencies = [
  "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
