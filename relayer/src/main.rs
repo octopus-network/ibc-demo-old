@@ -49,6 +49,21 @@ fn print_usage(matches: &clap::ArgMatches) {
     println!("{}", matches.usage());
 }
 
+// TODO: find the corresponding rpc address according to para_id
+fn find_rpc_address(addr: Url, message: Vec<u8>) {
+    let signer = AccountKeyring::Bob.pair();
+    let ibc_packet = ClientBuilder::<Runtime>::new()
+        .set_url(addr.clone())
+        .build()
+        .and_then(move |client| client.xt(signer, None))
+        .and_then(move |xt| xt.ibc(|calls| calls.ibc_packet(message)).submit());
+
+    match ibc_packet.wait() {
+        Ok(_) => {}
+        Err(e) => println!("{:?}", e),
+    };
+}
+
 fn execute(matches: clap::ArgMatches) {
     let password = matches.value_of("password");
     match matches.subcommand() {
@@ -56,12 +71,12 @@ fn execute(matches: clap::ArgMatches) {
             let suri = matches
                 .value_of("suri")
                 .expect("secret URI parameter is required; thus it can't be None; qed");
-            let pair = sr25519::Pair::from_string(suri, password).expect("Invalid phrase");
+            let _pair = sr25519::Pair::from_string(suri, password).expect("Invalid phrase");
 
             let index = matches
                 .value_of("nonce")
                 .expect("nonce is required; thus it can't be None; qed");
-            let index = str::parse::<Index>(index)
+            let _index = str::parse::<Index>(index)
                 .expect("Invalid 'nonce' parameter; expecting an integer.");
 
             let genesis_hash = matches
@@ -109,8 +124,10 @@ fn execute(matches: clap::ArgMatches) {
             });
             executor.spawn(blocks.map_err(|_| ()));
 
+            type EventRecords = Vec<srml_system::EventRecord<<Runtime as System>::Event, <Runtime as System>::Hash>>;
+
             let stream = rt.block_on(client.subscribe_events()).unwrap();
-            let hs1 = headers.clone();
+            let headers = headers.clone();
             let block_events = stream
                 .for_each(move |change_set| {
                     change_set
@@ -119,113 +136,83 @@ fn execute(matches: clap::ArgMatches) {
                         .filter_map(|(_key, data)| {
                             data.as_ref().map(|data| Decode::decode(&mut &data.0[..]))
                         })
-                        .for_each(
-                            |result: Result<
-                                Vec<
-                                    srml_system::EventRecord<
-                                        <Runtime as System>::Event,
-                                        <Runtime as System>::Hash,
-                                    >,
-                                >,
-                                codec::Error,
-                            >| {
-                                let _ = result.map(|events| {
-                                    events.into_iter().for_each(|event| match event.event {
-                                        ibc_node_runtime::Event::ibc(
-                                            IbcEvent::InterchainMessageSent(id, message),
-                                        ) => {
-                                            let block_hash = change_set.block.clone();
-                                            println!(
-                                                "block_hash: {:?}, id: {}, message: {:?}",
-                                                block_hash, id, message
-                                            );
+                        .filter_map(
+                            |result: Result<EventRecords, codec::Error>| { result.ok() },
+                        )
+                        .for_each(|events| {
+                            events.into_iter().for_each(|event| match event.event {
+                                ibc_node_runtime::Event::ibc(IbcEvent::InterchainMessageSent(
+                                    id,
+                                    message,
+                                )) => {
+                                    let block_hash = change_set.block.clone();
+                                    println!(
+                                        "block_hash: {:?}, id: {}, message: {:?}",
+                                        block_hash, id, message
+                                    );
 
-                                            // TEST BEGIN
-                                            let headers = hs1.lock().unwrap();
-                                            match headers.iter().next() {
-                                                Some((block_hash, block_header)) => {
-                                                    let block_hash = block_hash.clone();
-                                                    let block_header = block_header.clone();
-                                                    let read_proof = client
-                                                        .read_proof(
-                                                            Some(block_hash.clone()),
-                                                            StorageKey(
-                                                                well_known_keys::HEAP_PAGES
-                                                                    .to_vec(),
-                                                            ),
-                                                        )
-                                                        .and_then(move |proof| {
-                                                            let db_storage =
-                                                                LightStorage::<Block>::new_test();
-                                                            let light_blockchain: Arc<
-                                                                Blockchain<LightStorage<Block>>,
-                                                            > = client::light::new_light_blockchain(
-                                                                db_storage,
-                                                            );
-                                                            let local_executor =
-                                                                NativeExecutor::<Executor>::new(
-                                                                    None,
-                                                                );
-                                                            let local_checker =
-                                                                client::light::new_fetch_checker(
-                                                                    light_blockchain.clone(),
-                                                                    local_executor,
-                                                                );
-                                                            let heap_pages = (&local_checker
-                                                                as &dyn FetchChecker<Block>)
-                                                                .check_read_proof(
-                                                                    &RemoteReadRequest::<
-                                                                        ibc_node_runtime::Header,
-                                                                    > {
-                                                                        block: block_header.hash(),
-                                                                        header: block_header
-                                                                            .clone(),
-                                                                        keys: vec![
-                                                                         well_known_keys::HEAP_PAGES
-                                                                             .to_vec(),
-                                                                     ],
-                                                                        retry_count: None,
-                                                                    },
-                                                                    proof,
-                                                                );
-                                                            println!(
-                                                                "heap_pages: {:?}",
-                                                                heap_pages
-                                                            );
-                                                            Ok(())
-                                                        });
-                                                    executor.spawn(
-                                                        read_proof
-                                                            .map(|_| ())
-                                                            .map_err(|e| println!("{:?}", e)),
+                                    // TEST BEGIN
+                                    let headers = headers.lock().unwrap();
+                                    match headers.iter().next() {
+                                        Some((block_hash, block_header)) => {
+                                            let block_hash = block_hash.clone();
+                                            let block_header = block_header.clone();
+                                            let read_proof = client
+                                                .read_proof(
+                                                    Some(block_hash.clone()),
+                                                    StorageKey(
+                                                        well_known_keys::HEAP_PAGES.to_vec(),
+                                                    ),
+                                                )
+                                                .and_then(move |proof| {
+                                                    let db_storage =
+                                                        LightStorage::<Block>::new_test();
+                                                    let light_blockchain: Arc<
+                                                        Blockchain<LightStorage<Block>>,
+                                                    > = client::light::new_light_blockchain(
+                                                        db_storage,
                                                     );
-                                                }
-                                                None => println!("header is not found."),
-                                            }
-                                            // TEST END
-
-                                            // TODO: find the corresponding rpc address according to para_id
-                                            let signer = AccountKeyring::Bob.pair();
-                                            let ibc_packet = ClientBuilder::<Runtime>::new()
-                                                .set_url(addr2.clone())
-                                                .build()
-                                                .and_then(move |client| client.xt(signer, None))
-                                                .and_then(move |xt| {
-                                                    xt.ibc(|calls| {
-                                                        calls.ibc_packet(message.to_vec())
-                                                    })
-                                                    .submit()
-                                                })
-                                                .map(|_| ())
-                                                .map_err(|e| println!("{:?}", e));
-
-                                            executor.spawn(ibc_packet);
+                                                    let local_executor =
+                                                        NativeExecutor::<Executor>::new(None);
+                                                    let local_checker =
+                                                        client::light::new_fetch_checker(
+                                                            light_blockchain.clone(),
+                                                            local_executor,
+                                                        );
+                                                    let heap_pages = (&local_checker
+                                                        as &dyn FetchChecker<Block>)
+                                                        .check_read_proof(
+                                                            &RemoteReadRequest::<
+                                                                ibc_node_runtime::Header,
+                                                            > {
+                                                                block: block_header.hash(),
+                                                                header: block_header.clone(),
+                                                                keys: vec![
+                                                                    well_known_keys::HEAP_PAGES
+                                                                        .to_vec(),
+                                                                ],
+                                                                retry_count: None,
+                                                            },
+                                                            proof,
+                                                        );
+                                                    println!("heap_pages: {:?}", heap_pages);
+                                                    Ok(())
+                                                });
+                                            executor.spawn(
+                                                read_proof
+                                                    .map(|_| ())
+                                                    .map_err(|e| println!("{:?}", e)),
+                                            );
                                         }
-                                        _ => {}
-                                    })
-                                });
-                            },
-                        );
+                                        None => println!("header is not found."),
+                                    }
+                                    // TEST END
+
+                                    find_rpc_address(addr2.clone(), message);
+                                }
+                                _ => {}
+                            });
+                        });
                     Ok(())
                 })
                 .map_err(|e| println!("{:?}", e));
