@@ -29,6 +29,7 @@ use substrate_subxt::{
     Client, ClientBuilder,
 };
 use url::Url;
+use tokio::runtime::TaskExecutor;
 
 native_executor_instance!(
 	pub Executor,
@@ -50,18 +51,17 @@ fn print_usage(matches: &clap::ArgMatches) {
 }
 
 // TODO: find the corresponding rpc address according to para_id
-fn find_rpc_address(addr: Url, message: Vec<u8>) {
+fn send_ibc_packet(executor: &TaskExecutor,  addr: Url, message: Vec<u8>) {
     let signer = AccountKeyring::Bob.pair();
     let ibc_packet = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
         .and_then(move |client| client.xt(signer, None))
-        .and_then(move |xt| xt.ibc(|calls| calls.ibc_packet(message)).submit());
+        .and_then(move |xt| xt.ibc(|calls| calls.ibc_packet(message)).submit())
+        .map(|_| ())
+        .map_err(|e| println!("{:?}", e));
 
-    match ibc_packet.wait() {
-        Ok(_) => {}
-        Err(e) => println!("{:?}", e),
-    };
+    executor.spawn(ibc_packet);
 }
 
 fn execute(matches: clap::ArgMatches) {
@@ -124,7 +124,9 @@ fn execute(matches: clap::ArgMatches) {
             });
             executor.spawn(blocks.map_err(|_| ()));
 
-            type EventRecords = Vec<srml_system::EventRecord<<Runtime as System>::Event, <Runtime as System>::Hash>>;
+            type EventRecords = Vec<
+                srml_system::EventRecord<<Runtime as System>::Event, <Runtime as System>::Hash>,
+            >;
 
             let stream = rt.block_on(client.subscribe_events()).unwrap();
             let headers = headers.clone();
@@ -136,9 +138,7 @@ fn execute(matches: clap::ArgMatches) {
                         .filter_map(|(_key, data)| {
                             data.as_ref().map(|data| Decode::decode(&mut &data.0[..]))
                         })
-                        .filter_map(
-                            |result: Result<EventRecords, codec::Error>| { result.ok() },
-                        )
+                        .filter_map(|result: Result<EventRecords, codec::Error>| result.ok())
                         .for_each(|events| {
                             events.into_iter().for_each(|event| match event.event {
                                 ibc_node_runtime::Event::ibc(IbcEvent::InterchainMessageSent(
@@ -208,7 +208,7 @@ fn execute(matches: clap::ArgMatches) {
                                     }
                                     // TEST END
 
-                                    find_rpc_address(addr2.clone(), message);
+                                    find_rpc_address(&executor, addr2.clone(), message);
                                 }
                                 _ => {}
                             });
