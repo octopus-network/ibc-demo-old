@@ -1,0 +1,15 @@
+[package]
+name = "proof"
+version = "0.1.0"
+authors = ["Yuanchao Sun <yuanchao.sun@gmail.com>"]
+edition = "2018"
+build = "build.rs"
+
+[build-dependencies]
+wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.3" }
+
+[features]
+default = [ "std" ]
+std = []
+
+[dependencies]

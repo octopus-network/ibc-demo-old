@@ -2660,6 +2660,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "proof"
+version = "0.1.0"
+dependencies = [
+ "substrate-wasm-builder-runner 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "prost"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

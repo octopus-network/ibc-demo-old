@@ -6,7 +6,7 @@ name = 'ibc-node'
 version = '2.0.0'
 
 [workspace]
-members = ['runtime', 'relayer']
+members = ['runtime', 'proof', 'relayer']
 
 [[bin]]
 name = 'ibc-node'
