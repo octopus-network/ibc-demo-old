@@ -11,7 +11,7 @@ use support::{
     dispatch::{Result, Vec},
     StorageMap, StorageValue,
 };
-use system::ensure_signed;
+use system::{ensure_root, ensure_signed};
 
 pub type ParaId = u32;
 
@@ -30,6 +30,7 @@ decl_storage! {
         // Here we are declaring a StorageValue, `Something` as a Option<u32>
         // `get(something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
         Something get(something): Option<u32>;
+        Code get(parachain_code): map ParaId => Option<Vec<u8>>;
         Heads get(parachain_head): map ParaId => Option<Vec<u8>>;
     }
 }
@@ -55,6 +56,12 @@ decl_module! {
 
             // here we are raising the Something event
             Self::deposit_event(RawEvent::SomethingStored(something, who));
+            Ok(())
+        }
+
+        fn register_proof(origin, id: ParaId, code: Vec<u8>) -> Result {
+            ensure_root(origin)?;
+            <Code>::insert(id, code);
             Ok(())
         }
 
