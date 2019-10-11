@@ -73,16 +73,33 @@ impl ModuleImportResolver for HostExternals {
     fn resolve_func(&self, field_name: &str, signature: &Signature) -> Result<FuncRef, Error> {
         match field_name {
             "ext_add" => {
-                 Ok(FuncInstance::alloc_host(
-                    Signature::new(&[ValueType::I32, ValueType::I32][..], Some(ValueType::I32)),
-                    env::ADD_FUNC_INDEX,
-                ))
-            },
+                let (params, ret_ty) =
+                    (&[ValueType::I32, ValueType::I32][..], Some(ValueType::I32));
+                if signature.params() != params || signature.return_type() != ret_ty {
+                    Err(Error::Instantiation(format!(
+                        "Export {} has a bad signature",
+                        field_name
+                    )))
+                } else {
+                    Ok(FuncInstance::alloc_host(
+                        Signature::new(params, ret_ty),
+                        env::ADD_FUNC_INDEX,
+                    ))
+                }
+            }
             "ext_check_read_proof" => {
-                Ok(FuncInstance::alloc_host(
-                    Signature::new(&[][..], Some(ValueType::I32)),
-                    env::CHECK_READ_PROOF,
-                ))
+                let (params, ret_ty) = (&[][..], Some(ValueType::I32));
+                if signature.params() != params || signature.return_type() != ret_ty {
+                    Err(Error::Instantiation(format!(
+                        "Export {} has a bad signature",
+                        field_name
+                    )))
+                } else {
+                    Ok(FuncInstance::alloc_host(
+                        Signature::new(params, ret_ty),
+                        env::ADD_FUNC_INDEX,
+                    ))
+                }
             }
 
             _ => {
