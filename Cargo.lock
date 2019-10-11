@@ -409,6 +409,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmake"
+version = "0.1.42"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "cc 1.0.45 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "const-random"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2165,6 +2173,15 @@ version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "rand 0.3.23 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "native-proof"
+version = "0.1.0"
+dependencies = [
+ "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wabt 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasmi 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -5070,6 +5087,27 @@ version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "wabt"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "serde 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wabt-sys 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "wabt-sys"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "cc 1.0.45 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cmake 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
+ "glob 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "want"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5442,6 +5480,7 @@ dependencies = [
 "checksum clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b957d88f4b6a63b9d70d5f454ac8011819c6efa7727858f458ab71c756ce2d3e"
 "checksum clear_on_drop 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "97276801e127ffb46b66ce23f35cc96bd454fa311294bced4bbace7baa8b1d17"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
+"checksum cmake 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)" = "81fb25b677f8bf1eb325017cb6bb8452f87969db0fedb4f757b297bee78a7c62"
 "checksum const-random 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "7b641a8c9867e341f3295564203b1c250eb8ce6cb6126e007941f78c4d2ed7fe"
 "checksum const-random-macro 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "c750ec12b83377637110d5a57f5ae08e895b06c4b16e2bdbf1a94ef717428c59"
 "checksum constant_time_eq 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "995a44c877f9212528ccc74b21a232f66ad69001e40ede5bcee2ac9ef2657120"
@@ -5872,6 +5911,8 @@ dependencies = [
 "checksum vergen 3.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "6aba5e34f93dc7051dfad05b98a18e9156f27e7b431fe1d2398cb6061c0a1dba"
 "checksum version_check 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "914b1a6776c4c929a602fafd8bc742e06365d4bcbe48c30f9cca5824f70dc9dd"
 "checksum void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
+"checksum wabt 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3c5c5c1286c6e578416982609f47594265f9d489f9b836157d403ad605a46693"
+"checksum wabt-sys 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "af5d153dc96aad7dc13ab90835b892c69867948112d95299e522d370c4e13a08"
 "checksum want 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b6395efa4784b027708f7451087e647ec73cc74f5d9bc2e418404248d679a230"
 "checksum wasi 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b89c3ce4ce14bdc6fb6beaf9ec7928ca331de5df7e5ea278375642a2f478570d"
 "checksum wasm-bindgen 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)" = "dcddca308b16cd93c2b67b126c688e5467e4ef2e28200dc7dfe4ae284f2faefc"

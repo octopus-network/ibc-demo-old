@@ -28,8 +28,8 @@ use substrate_subxt::{
     },
     Client, ClientBuilder,
 };
-use url::Url;
 use tokio::runtime::TaskExecutor;
+use url::Url;
 
 native_executor_instance!(
 	pub Executor,
@@ -51,7 +51,7 @@ fn print_usage(matches: &clap::ArgMatches) {
 }
 
 // TODO: find the corresponding rpc address according to para_id
-fn send_ibc_packet(executor: &TaskExecutor,  addr: Url, message: Vec<u8>) {
+fn send_ibc_packet(executor: &TaskExecutor, addr: Url, message: Vec<u8>) {
     let signer = AccountKeyring::Bob.pair();
     let ibc_packet = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())

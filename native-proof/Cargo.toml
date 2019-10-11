@@ -1,0 +1,12 @@
+[package]
+name = "native-proof"
+version = "0.1.0"
+authors = ["yjhmelody <465402634@qq.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wasmi = "0.5"
+wabt = "0.9"
+lazy_static = "1.4"
