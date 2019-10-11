@@ -40,15 +40,15 @@ impl HostExternals {
         Self { max_memory, memory }
     }
 
-    fn check_signature(&self, index: usize, signature: &Signature) -> bool {
-        let (params, ret_ty): (&[ValueType], Option<ValueType>) = match index {
-            env::ADD_FUNC_INDEX => (&[ValueType::I32, ValueType::I32], Some(ValueType::I32)),
-            env::CHECK_READ_PROOF => (&[], Some(ValueType::I32)),
+    // fn check_signature(&self, index: usize, signature: &Signature) -> bool {
+    //     let (params, ret_ty): (&[ValueType], Option<ValueType>) = match index {
+    //         env::ADD_FUNC_INDEX => (&[ValueType::I32, ValueType::I32], Some(ValueType::I32)),
+    //         env::CHECK_READ_PROOF => (&[], Some(ValueType::I32)),
 
-            _ => return false,
-        };
-        signature.params() == params && signature.return_type() == ret_ty
-    }
+    //         _ => return false,
+    //     };
+    //     signature.params() == params && signature.return_type() == ret_ty
+    // }
 }
 
 // for index functions
@@ -73,17 +73,15 @@ impl ModuleImportResolver for HostExternals {
     fn resolve_func(&self, field_name: &str, signature: &Signature) -> Result<FuncRef, Error> {
         match field_name {
             "ext_add" => {
-                let index = env::ADD_FUNC_INDEX;
                  Ok(FuncInstance::alloc_host(
                     Signature::new(&[ValueType::I32, ValueType::I32][..], Some(ValueType::I32)),
-                    index,
+                    env::ADD_FUNC_INDEX,
                 ))
             },
             "ext_check_read_proof" => {
-                let index = env::CHECK_READ_PROOF;
                 Ok(FuncInstance::alloc_host(
                     Signature::new(&[][..], Some(ValueType::I32)),
-                    index,
+                    env::CHECK_READ_PROOF,
                 ))
             }
 

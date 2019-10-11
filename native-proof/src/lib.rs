@@ -43,6 +43,7 @@ fn it_should_work_well() {
     let res = invoke_export(&instance, "add", &args).unwrap().unwrap();
     assert_eq!(res, RuntimeValue::I32(3));
 
-    let res = invoke_export(&instance, "check_read_proof", &[]).unwrap().unwrap();
+    let args = [];
+    let res = invoke_export(&instance, "check_read_proof", &args).expect("has no err").expect("has return value");
     assert_eq!(res, RuntimeValue::I32(1));
 }

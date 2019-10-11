@@ -8,5 +8,3 @@ edition = "2018"
 
 [dependencies]
 wasmi = "0.5"
-wabt = "0.9"
-lazy_static = "1.4"
