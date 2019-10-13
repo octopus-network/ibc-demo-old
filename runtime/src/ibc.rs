@@ -79,6 +79,7 @@ decl_module! {
 
         fn ibc_packet(origin, message: Vec<u8>) -> Result {
             ensure_signed(origin)?;
+            runtime_io::run_wasm();
             Self::deposit_event(RawEvent::IbcPacketReceived(message));
             Ok(())
         }
