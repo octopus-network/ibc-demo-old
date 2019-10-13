@@ -1,32 +1,36 @@
 #![no_std]
-#![feature(core_intrinsics, lang_items, core_panic_info, alloc_error_handler)]
+#![cfg_attr(
+    not(feature = "std"),
+    feature(core_intrinsics, lang_items, core_panic_info, alloc_error_handler)
+)]
 
-use core::intrinsics;
-use core::panic::PanicInfo;
+// Make the WASM binary available.
+#[cfg(feature = "std")]
+include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-#[cfg(not(feature = "no_panic_handler"))]
+#[cfg(not(feature = "std"))]
 #[panic_handler]
 #[no_mangle]
-pub fn panic(_: &PanicInfo) -> ! {
-    unsafe { intrinsics::abort() }
+pub fn panic(_info: &core::panic::PanicInfo) -> ! {
+    unsafe { core::intrinsics::abort() }
 }
 
-#[cfg(not(feature = "no_oom"))]
+#[cfg(not(feature = "std"))]
 #[alloc_error_handler]
-pub extern "C" fn oom(_: core::alloc::Layout) -> ! {
+#[no_mangle]
+pub fn oom(_: core::alloc::Layout) -> ! {
     unsafe {
-        intrinsics::abort();
+        core::intrinsics::abort();
     }
 }
 
+#[cfg(not(feature = "std"))]
 #[no_mangle]
-pub extern "C" fn check_read_proof(params: *const u8, len: u64) -> bool {
-    unsafe { ll::ext_check_read_proof() != 0 }
-}
-
-#[no_mangle]
-pub extern "C" fn add(a: i32, b: i32) -> i32 {
-    unsafe { ll::ext_add(a, b) }
+// pub extern "C" fn check_read_proof(params: *const u8, len: usize) -> usize {
+pub extern "C" fn check_read_proof() -> i32 {
+    // unsafe { ll::ext_check_read_proof() + 1 }
+    unsafe { ll::ext_add(1, 2) }
+    // 1
 }
 
 mod ll {

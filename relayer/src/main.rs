@@ -208,7 +208,7 @@ fn execute(matches: clap::ArgMatches) {
                                     }
                                     // TEST END
 
-                                    find_rpc_address(&executor, addr2.clone(), message);
+                                    send_ibc_packet(&executor, addr2.clone(), message);
                                 }
                                 _ => {}
                             });
