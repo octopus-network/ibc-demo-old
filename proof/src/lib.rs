@@ -28,14 +28,11 @@ pub fn oom(_: core::alloc::Layout) -> ! {
 #[no_mangle]
 // pub extern "C" fn check_read_proof(params: *const u8, len: usize) -> usize {
 pub extern "C" fn check_read_proof() -> i32 {
-    // unsafe { ll::ext_check_read_proof() + 1 }
-    unsafe { ll::ext_add(1, 2) }
-    // 1
+    unsafe { ll::ext_check_read_proof() + 1 }
 }
 
 mod ll {
     extern "C" {
-        pub fn ext_add(a: i32, b: i32) -> i32;
         pub fn ext_check_read_proof() -> i32;
     }
 }
