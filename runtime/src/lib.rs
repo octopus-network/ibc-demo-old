@@ -13,12 +13,12 @@ use client::{
     block_builder::api::{self as block_builder_api, CheckInherentsResult, InherentData},
     impl_runtime_apis, runtime_api as client_api,
 };
-use grandpa::fg_primitives::{self, ScheduledChange};
+use grandpa::fg_primitives;
 use grandpa::{AuthorityId as GrandpaId, AuthorityWeight as GrandpaWeight};
 use primitives::{crypto::key_types, OpaqueMetadata};
 use rstd::prelude::*;
 use sr_primitives::traits::{
-    BlakeTwo256, Block as BlockT, ConvertInto, DigestFor, NumberFor, StaticLookup, Verify,
+    BlakeTwo256, Block as BlockT, ConvertInto, NumberFor, StaticLookup, Verify,
 };
 use sr_primitives::weights::Weight;
 use sr_primitives::{
@@ -34,7 +34,7 @@ pub use balances::Call as BalancesCall;
 #[cfg(any(feature = "std", test))]
 pub use sr_primitives::BuildStorage;
 pub use sr_primitives::{Perbill, Permill};
-pub use support::{construct_runtime, parameter_types, StorageValue};
+pub use support::{construct_runtime, parameter_types, traits::Randomness, StorageValue};
 pub use timestamp::Call as TimestampCall;
 
 /// An index to a block.
@@ -190,6 +190,7 @@ parameter_types! {
 impl babe::Trait for Runtime {
     type EpochDuration = EpochDuration;
     type ExpectedBlockTime = ExpectedBlockTime;
+    type EpochChangeTrigger = babe::SameAuthoritiesForever;
 }
 
 impl grandpa::Trait for Runtime {
@@ -270,6 +271,7 @@ construct_runtime!(
 		Balances: balances::{default, Error},
 		Sudo: sudo,
 		Ibc: ibc::{Module, Call, Storage, Event<T>},
+		RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
 	}
 );
 
@@ -339,7 +341,7 @@ impl_runtime_apis! {
         }
 
         fn random_seed() -> <Block as BlockT>::Hash {
-            System::random_seed()
+            RandomnessCollectiveFlip::random_seed()
         }
     }
 
@@ -356,18 +358,6 @@ impl_runtime_apis! {
     }
 
     impl fg_primitives::GrandpaApi<Block> for Runtime {
-        fn grandpa_pending_change(digest: &DigestFor<Block>)
-            -> Option<ScheduledChange<NumberFor<Block>>>
-        {
-            Grandpa::pending_change(digest)
-        }
-
-        fn grandpa_forced_change(digest: &DigestFor<Block>)
-            -> Option<(NumberFor<Block>, ScheduledChange<NumberFor<Block>>)>
-        {
-            Grandpa::forced_change(digest)
-        }
-
         fn grandpa_authorities() -> Vec<(GrandpaId, GrandpaWeight)> {
             Grandpa::grandpa_authorities()
         }

@@ -1,38 +1,3 @@
-[build-dependencies.wasm-builder-runner]
-package = 'substrate-wasm-builder-runner'
-version = '1.0.2'
-
-[features]
-default = ['std']
-std = [
-    'codec/std',
-    'client/std',
-    'rstd/std',
-    'runtime-io/std',
-    'support/std',
-    'balances/std',
-    'babe/std',
-    'babe-primitives/std',
-    'executive/std',
-    'indices/std',
-    'grandpa/std',
-    'primitives/std',
-    'sr-primitives/std',
-    'system/std',
-    'timestamp/std',
-    'sudo/std',
-    'version/std',
-    'serde',
-    'safe-mix/std',
-    'offchain-primitives/std',
-    'substrate-session/std',
-]
-
-[package]
-authors = ['ys']
-edition = '2018'
-name = 'ibc-node-runtime'
-version = '2.0.0'
 [dependencies.babe]
 default-features = false
 git = 'https://github.com/en/substrate.git'
@@ -93,6 +58,12 @@ git = 'https://github.com/en/substrate.git'
 package = 'substrate-primitives'
 branch = 'ibc-demo'
 
+[dependencies.randomness-collective-flip]
+default_features = false
+git = 'https://github.com/en/substrate.git'
+package = 'srml-randomness-collective-flip'
+branch = 'ibc-demo'
+
 [dependencies.rstd]
 default_features = false
 git = 'https://github.com/en/substrate.git'
@@ -107,12 +78,12 @@ branch = 'ibc-demo'
 
 [dependencies.safe-mix]
 default-features = false
-version = '1.0'
+version = '1.0.0'
 
 [dependencies.serde]
 features = ['derive']
 optional = true
-version = '1.0'
+version = '1.0.101'
 
 [dependencies.sr-primitives]
 default_features = false
@@ -153,3 +124,39 @@ default_features = false
 git = 'https://github.com/en/substrate.git'
 package = 'sr-version'
 branch = 'ibc-demo'
+[build-dependencies.wasm-builder-runner]
+package = 'substrate-wasm-builder-runner'
+version = '1.0.2'
+
+[package]
+authors = ['ys']
+edition = '2018'
+name = 'ibc-node-runtime'
+version = '2.0.0'
+
+[features]
+default = ['std']
+std = [
+    'codec/std',
+    'client/std',
+    'rstd/std',
+    'runtime-io/std',
+    'support/std',
+    'balances/std',
+    'babe/std',
+    'babe-primitives/std',
+    'executive/std',
+    'indices/std',
+    'grandpa/std',
+    'primitives/std',
+    'sr-primitives/std',
+    'randomness-collective-flip/std',
+    'system/std',
+    'timestamp/std',
+    'sudo/std',
+    'version/std',
+    'serde',
+    'safe-mix/std',
+    'offchain-primitives/std',
+    'substrate-session/std',
+]

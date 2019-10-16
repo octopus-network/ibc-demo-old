@@ -12,12 +12,12 @@ path = 'src/main.rs'
 
 [dependencies]
 env_logger = "0.6"
-clap = { version = "~2.32", features = ["yaml"] }
+clap = { version = "~2.33", features = ["yaml"] }
 substrate-subxt = { git="https://github.com/en/substrate-subxt.git", branch="ibc-demo" }
 hex = "0.3"
 tokio = { version = "0.1.11" }
-futures = "0.1.18"
-futures03 = { package = "futures-preview", version = "=0.3.0-alpha.18", features = ["compat"] }
+futures = "0.1.19"
+futures03 = { package = "futures-preview", version = "=0.3.0-alpha.19", features = ["compat"] }
 url = "1.7"
 
 [dependencies.codec]

@@ -48,7 +48,7 @@ macro_rules! new_full_start {
         .with_transaction_pool(|config, client| {
             Ok(transaction_pool::txpool::Pool::new(
                 config,
-                transaction_pool::ChainApi::new(client),
+                transaction_pool::FullChainApi::new(client),
             ))
         })?
         .with_import_queue(|_config, client, mut select_chain, _transaction_pool| {
@@ -58,7 +58,7 @@ macro_rules! new_full_start {
             let (grandpa_block_import, grandpa_link) =
                 grandpa::block_import::<_, _, _, ibc_node_runtime::RuntimeApi, _, _>(
                     client.clone(),
-                    client.clone(),
+                    &*client,
                     select_chain,
                 )?;
             let justification_import = grandpa_block_import.clone();
@@ -145,7 +145,7 @@ pub fn new_full<C: Send + Default + 'static>(
     let grandpa_config = grandpa::Config {
         // FIXME #1578 make this available through chainspec
         gossip_duration: Duration::from_millis(333),
-        justification_period: 4096,
+        justification_period: 512,
         name: Some(name),
         keystore: Some(service.keystore()),
     };
@@ -198,7 +198,7 @@ pub fn new_light<C: Send + Default + 'static>(
         .with_transaction_pool(|config, client| {
             Ok(TransactionPool::new(
                 config,
-                transaction_pool::ChainApi::new(client),
+                transaction_pool::FullChainApi::new(client),
             ))
         })?
         .with_import_queue_and_fprb(

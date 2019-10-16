@@ -9,7 +9,6 @@
 use support::{
     decl_event, decl_module, decl_storage,
     dispatch::{Result, Vec},
-    StorageMap, StorageValue,
 };
 use system::{ensure_root, ensure_signed};
 
@@ -105,13 +104,12 @@ decl_event!(
 mod tests {
     use super::*;
 
-    use primitives::{Blake2Hasher, H256};
-    use runtime_io::with_externalities;
-    use sr_primitives::weights::Weight;
-    use sr_primitives::Perbill;
+    use primitives::H256;
     use sr_primitives::{
         testing::Header,
         traits::{BlakeTwo256, IdentityLookup},
+        weights::Weight,
+        Perbill,
     };
     use support::{assert_ok, impl_outer_origin, parameter_types};
 
@@ -155,7 +153,7 @@ mod tests {
 
     // This function basically just builds a genesis storage key/value store according to
     // our desired mockup.
-    fn new_test_ext() -> runtime_io::TestExternalities<Blake2Hasher> {
+    fn new_test_ext() -> runtime_io::TestExternalities {
         system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap()
@@ -164,7 +162,7 @@ mod tests {
 
     #[test]
     fn it_works_for_default_value() {
-        with_externalities(&mut new_test_ext(), || {
+        new_test_ext().execute_with(|| {
             // Just a dummy test for the dummy funtion `do_something`
             // calling the `do_something` function with a value 42
             assert_ok!(Ibc::do_something(Origin::signed(1), 42));
