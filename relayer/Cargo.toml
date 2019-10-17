@@ -52,6 +52,11 @@ git = 'https://github.com/en/substrate.git'
 package = 'srml-balances'
 branch = 'ibc-demo'
 
+[dependencies.srml-indices]
+git = 'https://github.com/en/substrate.git'
+package = 'srml-indices'
+branch = 'ibc-demo'
+
 [dependencies.runtime-primitives]
 git = 'https://github.com/en/substrate.git'
 package = 'sr-primitives'

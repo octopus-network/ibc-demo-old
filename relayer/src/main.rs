@@ -5,7 +5,7 @@ use client::{
 };
 use client_db::light::LightStorage;
 use codec::Decode;
-use executor::{native_executor_instance, NativeExecutor};
+use executor::{native_executor_instance, NativeExecutor, WasmExecutionMethod};
 use futures::stream::Stream;
 use futures::Future;
 use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent, Block};
@@ -17,16 +17,12 @@ use primitives::{
     storage::{well_known_keys, StorageKey},
     Pair,
 };
-use runtime_primitives::{generic::Era, traits::Header};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 use substrate_subxt::{
-    srml::{
-        ibc::{Ibc, IbcXt},
-        system::System,
-    },
-    Client, ClientBuilder,
+    ibc::{Ibc, IbcXt},
+    Balances, Client, ClientBuilder, System,
 };
 use tokio::runtime::TaskExecutor;
 use url::Url;
@@ -112,8 +108,8 @@ fn execute(matches: clap::ArgMatches) {
             let stream = rt.block_on(client.subscribe_finalized_blocks()).unwrap();
             let hs = headers.clone();
             let blocks = stream.for_each(move |block_header| {
-                let header_number = block_header.number();
-                let state_root = block_header.state_root();
+                let header_number = block_header.number;
+                let state_root = block_header.state_root;
                 let block_hash = block_header.hash();
                 println!("header_number: {:?}", header_number);
                 println!("state_root: {:?}", state_root);
@@ -124,9 +120,8 @@ fn execute(matches: clap::ArgMatches) {
             });
             executor.spawn(blocks.map_err(|_| ()));
 
-            type EventRecords = Vec<
-                srml_system::EventRecord<<Runtime as System>::Event, <Runtime as System>::Hash>,
-            >;
+            type EventRecords =
+                Vec<srml_system::EventRecord<ibc_node_runtime::Event, <Runtime as System>::Hash>>;
 
             let stream = rt.block_on(client.subscribe_events()).unwrap();
             let headers = headers.clone();
@@ -173,7 +168,10 @@ fn execute(matches: clap::ArgMatches) {
                                                         db_storage,
                                                     );
                                                     let local_executor =
-                                                        NativeExecutor::<Executor>::new(None);
+                                                        NativeExecutor::<Executor>::new(
+                                                            WasmExecutionMethod::Interpreted,
+                                                            None,
+                                                        );
                                                     let local_checker =
                                                         client::light::new_fetch_checker(
                                                             light_blockchain.clone(),
@@ -245,6 +243,7 @@ fn execute(matches: clap::ArgMatches) {
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 struct Runtime;
 
 impl System for Runtime {
@@ -253,28 +252,12 @@ impl System for Runtime {
     type Hash = <ibc_node_runtime::Runtime as srml_system::Trait>::Hash;
     type Hashing = <ibc_node_runtime::Runtime as srml_system::Trait>::Hashing;
     type AccountId = <ibc_node_runtime::Runtime as srml_system::Trait>::AccountId;
-    type Lookup = <ibc_node_runtime::Runtime as srml_system::Trait>::Lookup;
+    type Address = srml_indices::address::Address<Self::AccountId, u32>;
     type Header = <ibc_node_runtime::Runtime as srml_system::Trait>::Header;
-    type Event = <ibc_node_runtime::Runtime as srml_system::Trait>::Event;
+}
 
-    type SignedExtra = (
-        srml_system::CheckVersion<ibc_node_runtime::Runtime>,
-        srml_system::CheckGenesis<ibc_node_runtime::Runtime>,
-        srml_system::CheckEra<ibc_node_runtime::Runtime>,
-        srml_system::CheckNonce<ibc_node_runtime::Runtime>,
-        srml_system::CheckWeight<ibc_node_runtime::Runtime>,
-        srml_balances::TakeFees<ibc_node_runtime::Runtime>,
-    );
-    fn extra(nonce: Self::Index) -> Self::SignedExtra {
-        (
-            srml_system::CheckVersion::<ibc_node_runtime::Runtime>::new(),
-            srml_system::CheckGenesis::<ibc_node_runtime::Runtime>::new(),
-            srml_system::CheckEra::<ibc_node_runtime::Runtime>::from(Era::Immortal),
-            srml_system::CheckNonce::<ibc_node_runtime::Runtime>::from(nonce),
-            srml_system::CheckWeight::<ibc_node_runtime::Runtime>::new(),
-            srml_balances::TakeFees::<ibc_node_runtime::Runtime>::from(0),
-        )
-    }
+impl Balances for Runtime {
+    type Balance = u64;
 }
 
 impl Ibc for Runtime {}
