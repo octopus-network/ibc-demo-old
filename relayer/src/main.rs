@@ -21,8 +21,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 use substrate_subxt::{
+    balances::Balances,
     ibc::{Ibc, IbcXt},
-    Balances, Client, ClientBuilder, System,
+    system::System,
+    Client, ClientBuilder,
 };
 use tokio::runtime::TaskExecutor;
 use url::Url;
