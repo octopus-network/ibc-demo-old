@@ -1,7 +1,7 @@
 use clap::load_yaml;
 use client::{
     light::blockchain::Blockchain,
-    light::fetcher::{FetchChecker, RemoteReadRequest},
+//    light::fetcher::{FetchChecker, RemoteReadRequest},
 };
 use client_db::light::LightStorage;
 use codec::Decode;
@@ -28,6 +28,8 @@ use substrate_subxt::{
 };
 use tokio::runtime::TaskExecutor;
 use url::Url;
+
+use crate::proof::{check_read_proof, RemoteReadRequest};
 
 native_executor_instance!(
 	pub Executor,
@@ -162,26 +164,7 @@ fn execute(matches: clap::ArgMatches) {
                                                     ),
                                                 )
                                                 .and_then(move |proof| {
-                                                    let db_storage =
-                                                        LightStorage::<Block>::new_test();
-                                                    let light_blockchain: Arc<
-                                                        Blockchain<LightStorage<Block>>,
-                                                    > = client::light::new_light_blockchain(
-                                                        db_storage,
-                                                    );
-                                                    let local_executor =
-                                                        NativeExecutor::<Executor>::new(
-                                                            WasmExecutionMethod::Interpreted,
-                                                            None,
-                                                        );
-                                                    let local_checker =
-                                                        client::light::new_fetch_checker(
-                                                            light_blockchain.clone(),
-                                                            local_executor,
-                                                        );
-                                                    let heap_pages = (&local_checker
-                                                        as &dyn FetchChecker<Block>)
-                                                        .check_read_proof(
+                                                    let heap_pages = check_read_proof::<Block, _>(
                                                             &RemoteReadRequest::<
                                                                 ibc_node_runtime::Header,
                                                             > {
