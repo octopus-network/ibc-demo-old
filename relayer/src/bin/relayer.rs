@@ -1,11 +1,8 @@
 use clap::load_yaml;
-use client::{
-    light::blockchain::Blockchain,
-    light::fetcher::{FetchChecker, RemoteReadRequest},
-};
-use client_db::light::LightStorage;
+
+use primitives::Blake2Hasher;
 use codec::Decode;
-use executor::{native_executor_instance, NativeExecutor, WasmExecutionMethod};
+use executor::{native_executor_instance};
 use futures::stream::Stream;
 use futures::Future;
 use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent, Block};
@@ -28,6 +25,8 @@ use substrate_subxt::{
 };
 use tokio::runtime::TaskExecutor;
 use url::Url;
+
+use relayer::check;
 
 native_executor_instance!(
 	pub Executor,
@@ -162,27 +161,8 @@ fn execute(matches: clap::ArgMatches) {
                                                     ),
                                                 )
                                                 .and_then(move |proof| {
-                                                    let db_storage =
-                                                        LightStorage::<Block>::new_test();
-                                                    let light_blockchain: Arc<
-                                                        Blockchain<LightStorage<Block>>,
-                                                    > = client::light::new_light_blockchain(
-                                                        db_storage,
-                                                    );
-                                                    let local_executor =
-                                                        NativeExecutor::<Executor>::new(
-                                                            WasmExecutionMethod::Interpreted,
-                                                            None,
-                                                        );
-                                                    let local_checker =
-                                                        client::light::new_fetch_checker(
-                                                            light_blockchain.clone(),
-                                                            local_executor,
-                                                        );
-                                                    let heap_pages = (&local_checker
-                                                        as &dyn FetchChecker<Block>)
-                                                        .check_read_proof(
-                                                            &RemoteReadRequest::<
+                                                    let heap_pages = check::check_read_proof::<Block, Blake2Hasher>(
+                                                            &check::RemoteReadRequest::<
                                                                 ibc_node_runtime::Header,
                                                             > {
                                                                 block: block_header.hash(),
