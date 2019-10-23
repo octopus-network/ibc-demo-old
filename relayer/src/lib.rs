@@ -1,2 +1,1 @@
-mod main;
-mod proof;
+pub mod check;

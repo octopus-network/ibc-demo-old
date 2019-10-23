@@ -1,5 +1,5 @@
 [workspace]
-members = ['proof', 'relayer', 'runtime', 'client']
+members = ['proof', 'relayer', 'runtime']
 
 [package]
 authors = ['ys']

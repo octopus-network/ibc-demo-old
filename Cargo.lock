@@ -409,33 +409,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "client"
-version = "0.1.0"
-dependencies = [
- "ctrlc 3.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ibc-node-runtime 2.0.0",
- "parity-scale-codec 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "sr-primitives 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-basic-authorship 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-cli 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-client 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-consensus-babe 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-consensus-babe-primitives 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-executor 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-finality-grandpa 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-finality-grandpa-primitives 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-inherents 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-network 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-primitives 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-service 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-state-machine 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
- "substrate-transaction-pool 2.0.0 (git+https://github.com/en/substrate.git?branch=ibc-demo)",
-]
-
-[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

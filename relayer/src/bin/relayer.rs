@@ -1,11 +1,8 @@
 use clap::load_yaml;
-use client::{
-    light::blockchain::Blockchain,
-//    light::fetcher::{FetchChecker, RemoteReadRequest},
-};
-use client_db::light::LightStorage;
+
+use primitives::Blake2Hasher;
 use codec::Decode;
-use executor::{native_executor_instance, NativeExecutor, WasmExecutionMethod};
+use executor::{native_executor_instance};
 use futures::stream::Stream;
 use futures::Future;
 use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent, Block};
@@ -29,7 +26,7 @@ use substrate_subxt::{
 use tokio::runtime::TaskExecutor;
 use url::Url;
 
-use crate::proof::{check_read_proof, RemoteReadRequest};
+use relayer::check;
 
 native_executor_instance!(
 	pub Executor,
@@ -164,8 +161,8 @@ fn execute(matches: clap::ArgMatches) {
                                                     ),
                                                 )
                                                 .and_then(move |proof| {
-                                                    let heap_pages = check_read_proof::<Block, _>(
-                                                            &RemoteReadRequest::<
+                                                    let heap_pages = check::check_read_proof::<Block, Blake2Hasher>(
+                                                            &check::RemoteReadRequest::<
                                                                 ibc_node_runtime::Header,
                                                             > {
                                                                 block: block_header.hash(),

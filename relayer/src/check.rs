@@ -5,7 +5,7 @@ use primitives::H256;
 use sr_primitives::traits::{Block as BlockT, Header as HeaderT};
 use state_machine::read_proof_check;
 
-
+use std::marker::PhantomData;
 use std::collections::HashMap;
 
 #[derive(Debug, Display)]
@@ -41,6 +41,7 @@ pub fn check_read_proof<Block: BlockT, H: Hasher<Out = H256>>(
     request: &RemoteReadRequest<Block::Header>,
     remote_proof: Vec<Vec<u8>>,
 ) -> Result<HashMap<Vec<u8>, Option<Vec<u8>>>, Error> {
+    let _hasher: PhantomData<(Block, H)> = PhantomData;
     read_proof_check::<H, _>(
         convert_hash(request.header.state_root()),
         remote_proof,
