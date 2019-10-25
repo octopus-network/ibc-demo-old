@@ -1,12 +1,11 @@
-
 use derive_more::Display;
 use hash_db::Hasher;
 use primitives::H256;
 use sr_primitives::traits::{Block as BlockT, Header as HeaderT};
 use state_machine::read_proof_check;
 
-use std::marker::PhantomData;
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 #[derive(Debug, Display)]
 pub enum Error {
@@ -47,5 +46,5 @@ pub fn check_read_proof<Block: BlockT, H: Hasher<Out = H256>>(
         remote_proof,
         request.keys.iter(),
     )
-        .map_err(|_e| Error::Proof)
+    .map_err(|_e| Error::Proof)
 }

@@ -1,13 +1,12 @@
 use clap::load_yaml;
-
-use primitives::Blake2Hasher;
 use codec::Decode;
-use executor::{native_executor_instance};
+use executor::native_executor_instance;
 use futures::stream::Stream;
 use futures::Future;
 use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent, Block};
 use keyring::AccountKeyring;
 use node_primitives::{Hash, Index};
+use primitives::Blake2Hasher;
 use primitives::{
     hexdisplay::HexDisplay,
     sr25519,
@@ -156,25 +155,25 @@ fn execute(matches: clap::ArgMatches) {
                                             let read_proof = client
                                                 .read_proof(
                                                     Some(block_hash.clone()),
-                                                    StorageKey(
-                                                        well_known_keys::HEAP_PAGES.to_vec(),
-                                                    ),
+                                                    StorageKey(well_known_keys::CODE.to_vec()),
                                                 )
                                                 .and_then(move |proof| {
-                                                    let heap_pages = check::check_read_proof::<Block, Blake2Hasher>(
-                                                            &check::RemoteReadRequest::<
-                                                                ibc_node_runtime::Header,
-                                                            > {
-                                                                block: block_header.hash(),
-                                                                header: block_header.clone(),
-                                                                keys: vec![
-                                                                    well_known_keys::HEAP_PAGES
-                                                                        .to_vec(),
-                                                                ],
-                                                                retry_count: None,
-                                                            },
-                                                            proof,
-                                                        );
+                                                    let heap_pages = check::check_read_proof::<
+                                                        Block,
+                                                        Blake2Hasher,
+                                                    >(
+                                                        &check::RemoteReadRequest::<
+                                                            ibc_node_runtime::Header,
+                                                        > {
+                                                            block: block_header.hash(),
+                                                            header: block_header.clone(),
+                                                            keys: vec![
+                                                                well_known_keys::CODE.to_vec()
+                                                            ],
+                                                            retry_count: None,
+                                                        },
+                                                        proof,
+                                                    );
                                                     println!("heap_pages: {:?}", heap_pages);
                                                     Ok(())
                                                 });
