@@ -13,6 +13,7 @@ use support::{
 use system::{ensure_root, ensure_signed};
 
 pub type ParaId = u32;
+pub type Identifier = u32;
 
 /// The module's configuration trait.
 pub trait Trait: system::Trait {
@@ -30,7 +31,7 @@ decl_storage! {
         // `get(something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
         Something get(something): Option<u32>;
         Code get(parachain_code): map ParaId => Option<Vec<u8>>;
-        Heads get(parachain_head): map ParaId => Option<Vec<u8>>;
+        Heads get(parachain_head): map Identifier => Option<Vec<u8>>;
     }
 }
 
@@ -64,22 +65,22 @@ decl_module! {
             Ok(())
         }
 
-        fn set_heads(origin, id: ParaId, heads: Vec<u8>) -> Result {
+        fn update_client(origin, id: Identifier, header: Vec<u8>) -> Result {
             ensure_signed(origin)?;
-            Heads::insert(&id, &heads);
+            <Heads>::insert(id, header);
+            Ok(())
+        }
+
+        fn recv_packet(origin, packet: Vec<u8>, proof: Vec<Vec<u8>>, proof_height: T::BlockNumber) -> Result {
+            ensure_signed(origin)?;
+            runtime_io::run_wasm();
+            Self::deposit_event(RawEvent::PacketReceived(packet));
             Ok(())
         }
 
         fn interchain_message(origin, id: ParaId, message: Vec<u8>) -> Result {
             ensure_signed(origin)?;
             Self::deposit_event(RawEvent::InterchainMessageSent(id, message));
-            Ok(())
-        }
-
-        fn ibc_packet(origin, message: Vec<u8>) -> Result {
-            ensure_signed(origin)?;
-            runtime_io::run_wasm();
-            Self::deposit_event(RawEvent::IbcPacketReceived(message));
             Ok(())
         }
     }
@@ -95,7 +96,7 @@ decl_event!(
         // To emit this event, we call the deposit funtion, from our runtime funtions
         SomethingStored(u32, AccountId),
         InterchainMessageSent(ParaId, Vec<u8>),
-        IbcPacketReceived(Vec<u8>),
+        PacketReceived(Vec<u8>),
     }
 );
 
