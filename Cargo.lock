@@ -4566,7 +4566,7 @@ dependencies = [
 [[package]]
 name = "substrate-subxt"
 version = "0.1.0"
-source = "git+https://github.com/en/substrate-subxt.git?branch=ibc-demo#e6cdd05b38dfb3570aeae55257902d5cce61c675"
+source = "git+https://github.com/en/substrate-subxt.git?branch=ibc-demo#a33b61c3e4cd9b0fc9dc540546e22c330fd7c649"
 dependencies = [
  "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5096,7 +5096,7 @@ name = "twox-hash"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.3.23 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

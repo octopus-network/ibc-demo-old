@@ -3,19 +3,15 @@ use codec::Decode;
 use executor::native_executor_instance;
 use futures::stream::Stream;
 use futures::Future;
-use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent, Block};
+use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent};
 use keyring::AccountKeyring;
 use node_primitives::{Hash, Index};
-use primitives::Blake2Hasher;
 use primitives::{
     hexdisplay::HexDisplay,
     sr25519,
     storage::{well_known_keys, StorageKey},
     Pair,
 };
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::Mutex;
 use substrate_subxt::{
     balances::Balances,
     ibc::{Ibc, IbcXt},
@@ -24,8 +20,6 @@ use substrate_subxt::{
 };
 use tokio::runtime::TaskExecutor;
 use url::Url;
-
-use relayer::check;
 
 native_executor_instance!(
 	pub Executor,
@@ -46,18 +40,40 @@ fn print_usage(matches: &clap::ArgMatches) {
     println!("{}", matches.usage());
 }
 
-// TODO: find the corresponding rpc address according to para_id
-fn send_ibc_packet(executor: &TaskExecutor, addr: Url, message: Vec<u8>) {
+fn update_client(executor: TaskExecutor, addr: Url, header: Vec<u8>) {
     let signer = AccountKeyring::Bob.pair();
-    let ibc_packet = ClientBuilder::<Runtime>::new()
+    let packet = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
-        .and_then(move |client| client.xt(signer, None))
-        .and_then(move |xt| xt.ibc(|calls| calls.ibc_packet(message)).submit())
+        .and_then(|client| client.xt(signer, None))
+        .and_then(|xt| xt.ibc(|calls| calls.update_client(1, header)).submit())
         .map(|_| ())
         .map_err(|e| println!("{:?}", e));
 
-    executor.spawn(ibc_packet);
+    executor.spawn(packet);
+}
+
+// TODO: find the corresponding rpc address according to para_id
+fn recv_packet(
+    executor: TaskExecutor,
+    addr: Url,
+    packet: Vec<u8>,
+    proof: Vec<Vec<u8>>,
+    proof_height: u32,
+) {
+    let signer = AccountKeyring::Bob.pair();
+    let packet = ClientBuilder::<Runtime>::new()
+        .set_url(addr.clone())
+        .build()
+        .and_then(|client| client.xt(signer, None))
+        .and_then(move |xt| {
+            xt.ibc(|calls| calls.recv_packet(packet, proof, proof_height))
+                .submit()
+        })
+        .map(|_| ())
+        .map_err(|e| println!("{:?}", e));
+
+    executor.spawn(packet);
 }
 
 fn execute(matches: clap::ArgMatches) {
@@ -89,8 +105,6 @@ fn execute(matches: clap::ArgMatches) {
             );
         }
         ("run", Some(matches)) => {
-            let headers = Arc::new(Mutex::new(HashMap::new()));
-
             let addr1 = matches
                 .value_of("addr1")
                 .expect("The address of chain A is required; thus it can't be None; qed");
@@ -102,11 +116,13 @@ fn execute(matches: clap::ArgMatches) {
 
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             let executor = rt.executor();
+            let executor1 = executor.clone();
+            let addr2_1 = addr2.clone();
+
             let client_future = ClientBuilder::<Runtime>::new().set_url(addr1).build();
             let client = rt.block_on(client_future).unwrap();
 
             let stream = rt.block_on(client.subscribe_finalized_blocks()).unwrap();
-            let hs = headers.clone();
             let blocks = stream.for_each(move |block_header| {
                 let header_number = block_header.number;
                 let state_root = block_header.state_root;
@@ -114,8 +130,7 @@ fn execute(matches: clap::ArgMatches) {
                 println!("header_number: {:?}", header_number);
                 println!("state_root: {:?}", state_root);
                 println!("block_hash: {:?}", block_hash);
-                let mut headers = hs.lock().unwrap();
-                headers.insert(block_hash, block_header);
+                update_client(executor1.clone(), addr2_1.clone(), vec![]); // TODO: block_header
                 Ok(())
             });
             executor.spawn(blocks.map_err(|_| ()));
@@ -124,7 +139,6 @@ fn execute(matches: clap::ArgMatches) {
                 Vec<srml_system::EventRecord<ibc_node_runtime::Event, <Runtime as System>::Hash>>;
 
             let stream = rt.block_on(client.subscribe_events()).unwrap();
-            let headers = headers.clone();
             let block_events = stream
                 .for_each(move |change_set| {
                     change_set
@@ -146,48 +160,37 @@ fn execute(matches: clap::ArgMatches) {
                                         block_hash, id, message
                                     );
 
-                                    // TEST BEGIN
-                                    let headers = headers.lock().unwrap();
-                                    match headers.iter().next() {
-                                        Some((block_hash, block_header)) => {
-                                            let block_hash = block_hash.clone();
-                                            let block_header = block_header.clone();
-                                            let read_proof = client
-                                                .read_proof(
-                                                    Some(block_hash.clone()),
-                                                    StorageKey(well_known_keys::CODE.to_vec()),
-                                                )
-                                                .and_then(move |proof| {
-                                                    let heap_pages = check::check_read_proof::<
-                                                        Block,
-                                                        Blake2Hasher,
-                                                    >(
-                                                        &check::RemoteReadRequest::<
-                                                            ibc_node_runtime::Header,
-                                                        > {
-                                                            block: block_header.hash(),
-                                                            header: block_header.clone(),
-                                                            keys: vec![
-                                                                well_known_keys::CODE.to_vec()
-                                                            ],
-                                                            retry_count: None,
-                                                        },
-                                                        proof,
-                                                    );
-                                                    println!("heap_pages: {:?}", heap_pages);
-                                                    Ok(())
-                                                });
-                                            executor.spawn(
-                                                read_proof
-                                                    .map(|_| ())
-                                                    .map_err(|e| println!("{:?}", e)),
-                                            );
-                                        }
-                                        None => println!("header is not found."),
-                                    }
-                                    // TEST END
-
-                                    send_ibc_packet(&executor, addr2.clone(), message);
+                                    let addr2_2 = addr2.clone();
+                                    let executor2 = executor.clone();
+                                    let read_proof = client
+                                        .read_proof(
+                                            Some(block_hash.clone()),
+                                            StorageKey(well_known_keys::CODE.to_vec()),
+                                        )
+                                        .and_then(move |proof| {
+                                            let signer = AccountKeyring::Charlie.pair();
+                                            let packet = ClientBuilder::<Runtime>::new()
+                                                .set_url(addr2_2.clone())
+                                                .build()
+                                                .and_then(|client| client.xt(signer, None))
+                                                .and_then(move |xt| {
+                                                    xt.ibc(|calls| {
+                                                        calls.recv_packet(
+                                                            message.clone(),
+                                                            proof,
+                                                            0, // proof_height,
+                                                        )
+                                                    })
+                                                    .submit()
+                                                })
+                                                .map(|_| ())
+                                                .map_err(|e| println!("{:?}", e));
+                                            executor2.spawn(packet);
+                                            Ok(())
+                                        });
+                                    executor.spawn(
+                                        read_proof.map(|_| ()).map_err(|e| println!("{:?}", e)),
+                                    );
                                 }
                                 _ => {}
                             });
