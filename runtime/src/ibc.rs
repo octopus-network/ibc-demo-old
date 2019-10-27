@@ -71,7 +71,7 @@ decl_module! {
             Ok(())
         }
 
-        fn recv_packet(origin, packet: Vec<u8>, proof: Vec<Vec<u8>>, proof_height: T::BlockNumber) -> Result {
+        fn recv_packet(origin, packet: Vec<u8>, proof: Vec<Vec<u8>>, proof_height: Vec<u8>, /*T::BlockNumber*/) -> Result {
             ensure_signed(origin)?;
             runtime_io::run_wasm();
             Self::deposit_event(RawEvent::PacketReceived(packet));

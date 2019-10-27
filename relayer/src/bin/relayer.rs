@@ -1,5 +1,5 @@
 use clap::load_yaml;
-use codec::Decode;
+use codec::{Decode, Encode};
 use executor::native_executor_instance;
 use futures::stream::Stream;
 use futures::Future;
@@ -130,7 +130,7 @@ fn execute(matches: clap::ArgMatches) {
                 println!("header_number: {:?}", header_number);
                 println!("state_root: {:?}", state_root);
                 println!("block_hash: {:?}", block_hash);
-                update_client(executor1.clone(), addr2_1.clone(), vec![]); // TODO: block_header
+                update_client(executor1.clone(), addr2_1.clone(), block_header.encode());
                 Ok(())
             });
             executor.spawn(blocks.map_err(|_| ()));
@@ -178,7 +178,7 @@ fn execute(matches: clap::ArgMatches) {
                                                         calls.recv_packet(
                                                             message.clone(),
                                                             proof,
-                                                            0, // proof_height,
+                                                            block_hash.as_bytes().to_vec(), // TODO: proof_height?
                                                         )
                                                     })
                                                     .submit()
