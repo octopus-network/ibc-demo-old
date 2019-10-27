@@ -12,7 +12,6 @@ use support::{
 };
 use system::{ensure_root, ensure_signed};
 
-pub type ParaId = u32;
 pub type Identifier = u32;
 
 /// The module's configuration trait.
@@ -30,7 +29,7 @@ decl_storage! {
         // Here we are declaring a StorageValue, `Something` as a Option<u32>
         // `get(something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
         Something get(something): Option<u32>;
-        Code get(parachain_code): map ParaId => Option<Vec<u8>>;
+        Code get(parachain_code): map Identifier => Option<Vec<u8>>;
         Heads get(parachain_head): map Identifier => Option<Vec<u8>>;
     }
 }
@@ -59,7 +58,7 @@ decl_module! {
             Ok(())
         }
 
-        fn register_proof(origin, id: ParaId, code: Vec<u8>) -> Result {
+        fn register_proof(origin, id: Identifier, code: Vec<u8>) -> Result {
             ensure_root(origin)?;
             <Code>::insert(id, code);
             Ok(())
@@ -78,9 +77,10 @@ decl_module! {
             Ok(())
         }
 
-        fn interchain_message(origin, id: ParaId, message: Vec<u8>) -> Result {
+        fn interchain_message(origin, id: Identifier, message: Vec<u8>) -> Result {
             ensure_signed(origin)?;
-            Self::deposit_event(RawEvent::InterchainMessageSent(id, message));
+            let now = <system::Module<T>>::block_number();
+            Self::deposit_event(RawEvent::InterchainMessageSent(id, now, message));
             Ok(())
         }
     }
@@ -90,12 +90,13 @@ decl_event!(
     pub enum Event<T>
     where
         AccountId = <T as system::Trait>::AccountId,
+        BlockNumber = <T as system::Trait>::BlockNumber,
     {
         // Just a dummy event.
         // Event `Something` is declared with a parameter of the type `u32` and `AccountId`
         // To emit this event, we call the deposit funtion, from our runtime funtions
         SomethingStored(u32, AccountId),
-        InterchainMessageSent(ParaId, Vec<u8>),
+        InterchainMessageSent(Identifier, BlockNumber, Vec<u8>),
         PacketReceived(Vec<u8>),
     }
 );

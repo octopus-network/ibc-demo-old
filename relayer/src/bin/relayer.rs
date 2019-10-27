@@ -3,7 +3,7 @@ use codec::{Decode, Encode};
 use executor::native_executor_instance;
 use futures::stream::Stream;
 use futures::Future;
-use ibc_node_runtime::{self, ibc::ParaId, ibc::RawEvent as IbcEvent};
+use ibc_node_runtime::{self, ibc::Identifier, ibc::RawEvent as IbcEvent};
 use keyring::AccountKeyring;
 use node_primitives::{Hash, Index};
 use primitives::{
@@ -47,29 +47,6 @@ fn update_client(executor: TaskExecutor, addr: Url, header: Vec<u8>) {
         .build()
         .and_then(|client| client.xt(signer, None))
         .and_then(|xt| xt.ibc(|calls| calls.update_client(1, header)).submit())
-        .map(|_| ())
-        .map_err(|e| println!("{:?}", e));
-
-    executor.spawn(packet);
-}
-
-// TODO: find the corresponding rpc address according to para_id
-fn recv_packet(
-    executor: TaskExecutor,
-    addr: Url,
-    packet: Vec<u8>,
-    proof: Vec<Vec<u8>>,
-    proof_height: u32,
-) {
-    let signer = AccountKeyring::Bob.pair();
-    let packet = ClientBuilder::<Runtime>::new()
-        .set_url(addr.clone())
-        .build()
-        .and_then(|client| client.xt(signer, None))
-        .and_then(move |xt| {
-            xt.ibc(|calls| calls.recv_packet(packet, proof, proof_height))
-                .submit()
-        })
         .map(|_| ())
         .map_err(|e| println!("{:?}", e));
 
@@ -139,65 +116,64 @@ fn execute(matches: clap::ArgMatches) {
                 Vec<srml_system::EventRecord<ibc_node_runtime::Event, <Runtime as System>::Hash>>;
 
             let stream = rt.block_on(client.subscribe_events()).unwrap();
-            let block_events = stream
-                .for_each(move |change_set| {
-                    change_set
-                        .changes
-                        .iter()
-                        .filter_map(|(_key, data)| {
-                            data.as_ref().map(|data| Decode::decode(&mut &data.0[..]))
-                        })
-                        .filter_map(|result: Result<EventRecords, codec::Error>| result.ok())
-                        .for_each(|events| {
-                            events.into_iter().for_each(|event| match event.event {
-                                ibc_node_runtime::Event::ibc(IbcEvent::InterchainMessageSent(
-                                    id,
-                                    message,
-                                )) => {
-                                    let block_hash = change_set.block.clone();
-                                    println!(
-                                        "block_hash: {:?}, id: {}, message: {:?}",
-                                        block_hash, id, message
-                                    );
+            let block_events =
+                stream
+                    .for_each(move |change_set| {
+                        change_set
+                            .changes
+                            .iter()
+                            .filter_map(|(_key, data)| {
+                                data.as_ref().map(|data| Decode::decode(&mut &data.0[..]))
+                            })
+                            .filter_map(|result: Result<EventRecords, codec::Error>| result.ok())
+                            .for_each(|events| {
+                                events.into_iter().for_each(|event| match event.event {
+                                    ibc_node_runtime::Event::ibc(
+                                        IbcEvent::InterchainMessageSent(id, proof_height, message),
+                                    ) => {
+                                        let block_hash = change_set.block.clone();
+                                        println!(
+                                            "block_hash: {:?}, id: {}, proof_height: {:?}, message: {:?}",
+                                            block_hash, id, proof_height, message
+                                        );
 
-                                    let addr2_2 = addr2.clone();
-                                    let executor2 = executor.clone();
-                                    let read_proof = client
-                                        .read_proof(
-                                            Some(block_hash.clone()),
-                                            StorageKey(well_known_keys::CODE.to_vec()),
-                                        )
-                                        .and_then(move |proof| {
-                                            let signer = AccountKeyring::Charlie.pair();
-                                            let packet = ClientBuilder::<Runtime>::new()
-                                                .set_url(addr2_2.clone())
-                                                .build()
-                                                .and_then(|client| client.xt(signer, None))
-                                                .and_then(move |xt| {
-                                                    xt.ibc(|calls| {
-                                                        calls.recv_packet(
-                                                            message.clone(),
-                                                            proof,
-                                                            block_hash.as_bytes().to_vec(), // TODO: proof_height?
-                                                        )
+                                        let addr2_2 = addr2.clone();
+                                        let executor2 = executor.clone();
+                                        let read_proof = client
+                                            .read_proof(
+                                                Some(block_hash.clone()),
+                                                StorageKey(well_known_keys::CODE.to_vec()),
+                                            )
+                                            .and_then(move |proof| {
+                                                let signer = AccountKeyring::Charlie.pair();
+                                                let packet = ClientBuilder::<Runtime>::new()
+                                                    .set_url(addr2_2.clone())
+                                                    .build()
+                                                    .and_then(|client| client.xt(signer, None))
+                                                    .and_then(move |xt| {
+                                                        xt.ibc(|calls| {
+                                                            calls.recv_packet(
+                                                                message.clone(),
+                                                                proof, proof_height
+                                                            )
+                                                        })
+                                                        .submit()
                                                     })
-                                                    .submit()
-                                                })
-                                                .map(|_| ())
-                                                .map_err(|e| println!("{:?}", e));
-                                            executor2.spawn(packet);
-                                            Ok(())
-                                        });
-                                    executor.spawn(
-                                        read_proof.map(|_| ()).map_err(|e| println!("{:?}", e)),
-                                    );
-                                }
-                                _ => {}
+                                                    .map(|_| ())
+                                                    .map_err(|e| println!("{:?}", e));
+                                                executor2.spawn(packet);
+                                                Ok(())
+                                            });
+                                        executor.spawn(
+                                            read_proof.map(|_| ()).map_err(|e| println!("{:?}", e)),
+                                        );
+                                    }
+                                    _ => {}
+                                });
                             });
-                        });
-                    Ok(())
-                })
-                .map_err(|e| println!("{:?}", e));
+                        Ok(())
+                    })
+                    .map_err(|e| println!("{:?}", e));
             rt.spawn(block_events);
             rt.shutdown_on_idle().wait().unwrap();
         }
@@ -205,7 +181,7 @@ fn execute(matches: clap::ArgMatches) {
             let para_id = matches
                 .value_of("para-id")
                 .expect("para-id is required; thus it can't be None; qed");
-            let para_id = str::parse::<ParaId>(para_id)
+            let para_id = str::parse::<Identifier>(para_id)
                 .expect("Invalid 'para-id' parameter; expecting an integer.");
 
             let message = matches
