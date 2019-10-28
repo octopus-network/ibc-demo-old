@@ -1,3 +1,5 @@
+use codec::Decode;
+use sr_primitives::traits::Header;
 /// A runtime module template with necessary imports
 
 /// Feel free to remove or edit this file as needed.
@@ -30,7 +32,7 @@ decl_storage! {
         // `get(something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
         Something get(something): Option<u32>;
         Code get(parachain_code): map Identifier => Option<Vec<u8>>;
-        Heads get(parachain_head): map Identifier => Option<Vec<u8>>;
+        Heads: map T::BlockNumber => Vec<u8>;
     }
 }
 
@@ -66,11 +68,12 @@ decl_module! {
 
         fn update_client(origin, id: Identifier, header: Vec<u8>) -> Result {
             ensure_signed(origin)?;
-            <Heads>::insert(id, header);
+            let h:<T as system::Trait>::Header = Decode::decode(&mut &header[..]).expect("todo: handle error");
+            <Heads<T>>::insert(h.number(), header);
             Ok(())
         }
 
-        fn recv_packet(origin, packet: Vec<u8>, proof: Vec<Vec<u8>>, proof_height: Vec<u8>, /*T::BlockNumber*/) -> Result {
+        fn recv_packet(origin, packet: Vec<u8>, proof: Vec<Vec<u8>>, proof_height: T::BlockNumber) -> Result {
             ensure_signed(origin)?;
             runtime_io::run_wasm();
             Self::deposit_event(RawEvent::PacketReceived(packet));
