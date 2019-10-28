@@ -1,5 +1,5 @@
-use codec::Decode;
-use sr_primitives::traits::Header;
+use codec::{Decode, Encode};
+use sr_primitives::{print, traits::Header};
 /// A runtime module template with necessary imports
 
 /// Feel free to remove or edit this file as needed.
@@ -15,6 +15,13 @@ use support::{
 use system::{ensure_root, ensure_signed};
 
 pub type Identifier = u32;
+
+#[derive(Clone, PartialEq, Eq, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Debug))]
+struct UncheckedPacket {
+    packet: Vec<u8>,
+    proof: Vec<Vec<u8>>,
+}
 
 /// The module's configuration trait.
 pub trait Trait: system::Trait {
@@ -32,7 +39,8 @@ decl_storage! {
         // `get(something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
         Something get(something): Option<u32>;
         Code get(parachain_code): map Identifier => Option<Vec<u8>>;
-        Heads: map T::BlockNumber => Vec<u8>;
+        Heads: map T::BlockNumber => Option<Vec<u8>>;
+        PacketQueue: map T::BlockNumber => Option<Vec<UncheckedPacket>>;
     }
 }
 
@@ -70,12 +78,18 @@ decl_module! {
             ensure_signed(origin)?;
             let h:<T as system::Trait>::Header = Decode::decode(&mut &header[..]).expect("todo: handle error");
             <Heads<T>>::insert(h.number(), header);
+            if let Some(up) = <PacketQueue<T>>::get(h.number()) {
+                print("1");
+                // TODO: check it
+            }
             Ok(())
         }
 
         fn recv_packet(origin, packet: Vec<u8>, proof: Vec<Vec<u8>>, proof_height: T::BlockNumber) -> Result {
             ensure_signed(origin)?;
             runtime_io::run_wasm();
+            // TODO
+            let _ = <PacketQueue<T>>::append(proof_height, &[UncheckedPacket{packet: packet.clone(), proof: proof}]);
             Self::deposit_event(RawEvent::PacketReceived(packet));
             Ok(())
         }
