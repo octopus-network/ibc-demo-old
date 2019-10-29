@@ -40,7 +40,7 @@ fn print_usage(matches: &clap::ArgMatches) {
     println!("{}", matches.usage());
 }
 
-fn update_client(executor: TaskExecutor, addr: Url, header: Vec<u8>) {
+fn update_client(executor: &TaskExecutor, addr: &Url, header: Vec<u8>) {
     let signer = AccountKeyring::Bob.pair();
     let packet = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
@@ -93,23 +93,25 @@ fn execute(matches: clap::ArgMatches) {
 
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             let executor = rt.executor();
-            let executor1 = executor.clone();
-            let addr2_1 = addr2.clone();
 
             let client_future = ClientBuilder::<Runtime>::new().set_url(addr1).build();
             let client = rt.block_on(client_future).unwrap();
 
             let stream = rt.block_on(client.subscribe_finalized_blocks()).unwrap();
-            let blocks = stream.for_each(move |block_header| {
-                let header_number = block_header.number;
-                let state_root = block_header.state_root;
-                let block_hash = block_header.hash();
-                println!("header_number: {:?}", header_number);
-                println!("state_root: {:?}", state_root);
-                println!("block_hash: {:?}", block_hash);
-                update_client(executor1.clone(), addr2_1.clone(), block_header.encode());
-                Ok(())
-            });
+            let blocks = {
+                let executor = executor.clone();
+                let addr2 = addr2.clone();
+                stream.for_each(move |block_header| {
+                    let header_number = block_header.number;
+                    let state_root = block_header.state_root;
+                    let block_hash = block_header.hash();
+                    println!("header_number: {:?}", header_number);
+                    println!("state_root: {:?}", state_root);
+                    println!("block_hash: {:?}", block_hash);
+                    update_client(&executor, &addr2, block_header.encode());
+                    Ok(())
+                })
+            };
             executor.spawn(blocks.map_err(|_| ()));
 
             type EventRecords =
@@ -137,7 +139,7 @@ fn execute(matches: clap::ArgMatches) {
                                             block_hash, id, proof_height, message
                                         );
 
-                                        let addr2_2 = addr2.clone();
+                                        let addr2 = addr2.clone();
                                         let executor2 = executor.clone();
                                         let read_proof = client
                                             .read_proof(
@@ -147,7 +149,7 @@ fn execute(matches: clap::ArgMatches) {
                                             .and_then(move |proof| {
                                                 let signer = AccountKeyring::Charlie.pair();
                                                 let packet = ClientBuilder::<Runtime>::new()
-                                                    .set_url(addr2_2.clone())
+                                                    .set_url(addr2)
                                                     .build()
                                                     .and_then(|client| client.xt(signer, None))
                                                     .and_then(move |xt| {
