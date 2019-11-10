@@ -1,0 +1,8 @@
+[submodule "substrate"]
+	path = substrate
+	url = https://github.com/en/substrate.git
+	branch = ibc-demo
+[submodule "substrate-subxt"]
+	path = substrate-subxt
+	url = https://github.com/en/substrate-subxt.git
+	branch = ibc-demo
