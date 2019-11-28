@@ -1,0 +1,13 @@
+[package]
+name = "frame"
+version = "0.1.0"
+authors = ["Yuanchao Sun <ys@cdot.network>"]
+edition = "2018"
+
+[dependencies]
+parity-scale-codec = { version = "1.0", default-features = false, features = ["derive", "full"] }
+substrate-subxt = { path = "../../substrate-subxt" }
+node-runtime = { path = "../../node-template/runtime", package = "node-template-runtime" }
+frame-system = { path = "../../substrate/frame/system" }
+pallet-balances = { path = "../../substrate/frame/balances" }
+pallet-indices = { path = "../../substrate/frame/indices" }

@@ -1,9 +1,19 @@
 [package]
 name = "relayer"
 version = "0.1.0"
-authors = ["Yuanchao Sun <yuanchao.sun@gmail.com>"]
+authors = ["Yuanchao Sun <ys@cdot.network>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = [
+	"frame",
+]
 
 [dependencies]
+tokio = "0.1"
+url = "1.7"
+futures = "0.1.28"
+substrate-subxt = { path = "../substrate-subxt" }
+frame = { path = "./frame" }
+keyring = { path = "../substrate/primitives/keyring", package = "substrate-keyring" }
+parity-scale-codec = { version = "1.0", default-features = false, features = ["derive", "full"] }
