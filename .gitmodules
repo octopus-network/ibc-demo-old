@@ -6,3 +6,6 @@
 	path = substrate
 	url = https://github.com/cdot-network/substrate.git
 	branch = ibc-demo
+[submodule "node-template/frame"]
+	path = node-template/frame
+	url = https://github.com/cdot-network/frame.git
