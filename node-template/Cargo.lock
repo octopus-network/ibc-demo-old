@@ -2400,6 +2400,7 @@ dependencies = [
  "pallet-aura 2.0.0",
  "pallet-balances 2.0.0",
  "pallet-grandpa 2.0.0",
+ "pallet-ibc 0.1.0",
  "pallet-indices 2.0.0",
  "pallet-randomness-collective-flip 2.0.0",
  "pallet-sudo 2.0.0",
@@ -2591,6 +2592,21 @@ dependencies = [
  "sr-staking-primitives 2.0.0",
  "sr-std 2.0.0",
  "substrate-finality-grandpa-primitives 2.0.0",
+ "substrate-primitives 2.0.0",
+]
+
+[[package]]
+name = "pallet-ibc"
+version = "0.1.0"
+dependencies = [
+ "frame-support 2.0.0",
+ "frame-system 2.0.0",
+ "pallet-balances 2.0.0",
+ "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-io 2.0.0",
+ "sr-primitives 2.0.0",
+ "sr-std 2.0.0",
  "substrate-primitives 2.0.0",
 ]
 

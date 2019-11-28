@@ -31,6 +31,7 @@ timestamp = { package = "pallet-timestamp", path = "../../substrate/frame/timest
 transaction-payment = { package = "pallet-transaction-payment", path = "../../substrate/frame/transaction-payment", default-features = false }
 txpool-runtime-api = { package = "sp-transaction-pool-runtime-api", path = "../../substrate/primitives/transaction-pool/runtime-api", default-features = false }
 version = { package = "sr-version", path = "../../substrate/primitives/sr-version", default-features = false }
+ibc = { package = "pallet-ibc", path = "../frame/ibc", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", path = "../../substrate/client/utils/wasm-builder-runner", version = "1.0.4" }
@@ -64,4 +65,5 @@ std = [
 	"transaction-payment/std",
 	"txpool-runtime-api/std",
 	"version/std",
+	"ibc/std",
 ]
