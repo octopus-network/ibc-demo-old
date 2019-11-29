@@ -10,6 +10,7 @@ members = [
 ]
 
 [dependencies]
+clap = "2.33.0"
 tokio = "0.1"
 url = "1.7"
 futures = "0.1.28"
