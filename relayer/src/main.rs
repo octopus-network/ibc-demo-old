@@ -1,9 +1,9 @@
 use clap::{App, ArgMatches, SubCommand};
+use codec::{Decode, Encode};
 use frame::{ibc, NodeRuntime as Runtime};
 use futures::{future::Future, stream::Stream};
 use keyring::AccountKeyring;
-use parity_scale_codec::Encode;
-use substrate_subxt::ClientBuilder;
+use substrate_subxt::{system::System, ClientBuilder};
 use tokio::runtime::TaskExecutor;
 use url::Url;
 
@@ -62,15 +62,48 @@ fn run(addr1: Url, addr2: Url) {
         println!("header_number: {:?}", header_number);
         println!("state_root: {:?}", state_root);
         println!("block_hash: {:?}", block_hash);
-        update_client(executor.clone(), addr2.clone(), 0, block_header.encode());
+        update_client(&executor, addr2.clone(), 0, block_header.encode());
         Ok(())
     });
 
-    rt.spawn(blocks.map_err(|_| ()));
+    let executor = rt.executor();
+    executor.spawn(blocks.map_err(|_| ()));
+
+    type EventRecords =
+        Vec<frame_system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
+
+    let stream = rt.block_on(client.subscribe_events()).unwrap();
+    let block_events = stream
+        .for_each(|change_set| {
+            change_set
+                .changes
+                .iter()
+                .filter_map(|(_key, data)| {
+                    data.as_ref().map(|data| Decode::decode(&mut &data.0[..]))
+                })
+                .filter_map(|result: Result<EventRecords, codec::Error>| result.ok())
+                .for_each(|events| {
+                    events.into_iter().for_each(|event| match event.event {
+                        node_runtime::Event::template(
+                            node_runtime::TemplateRawEvent::SomethingStored(something, who),
+                        ) => {
+                            let block_hash = change_set.block.clone();
+                            println!(
+                                "block_hash: {:?}, something: {}, who: {:?}",
+                                block_hash, something, who
+                            );
+                        }
+                        _ => {}
+                    });
+                });
+            Ok(())
+        })
+        .map_err(|e| println!("{:?}", e));
+    rt.spawn(block_events);
     rt.shutdown_on_idle().wait().unwrap();
 }
 
-fn update_client(executor: TaskExecutor, addr: Url, id: u32, header: Vec<u8>) {
+fn update_client(executor: &TaskExecutor, addr: Url, id: u32, header: Vec<u8>) {
     let signer = AccountKeyring::Alice.pair();
     let call = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())

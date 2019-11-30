@@ -17,4 +17,6 @@ futures = "0.1.28"
 substrate-subxt = { path = "../substrate-subxt" }
 frame = { path = "./frame" }
 keyring = { path = "../substrate/primitives/keyring", package = "substrate-keyring" }
-parity-scale-codec = { version = "1.0", default-features = false, features = ["derive", "full"] }
+codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
+frame-system = { path = "../substrate/frame/system" }
+node-runtime = { path = "../node-template/runtime", package = "node-template-runtime" }

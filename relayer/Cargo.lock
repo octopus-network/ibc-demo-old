@@ -1808,7 +1808,9 @@ version = "0.1.0"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame 0.1.0",
+ "frame-system 2.0.0",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
+ "node-template-runtime 2.0.0",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "substrate-keyring 2.0.0",
  "substrate-subxt 0.3.0",
