@@ -49,6 +49,9 @@ fn run(addr1: Url, addr2: Url) {
     let mut rt = tokio::runtime::Runtime::new().unwrap();
     let executor = rt.executor();
 
+    // TODO:
+    let addr2_1 = addr2.clone();
+
     let client_future = ClientBuilder::<Runtime>::new()
         .set_url(addr1.clone())
         .build();
@@ -74,7 +77,7 @@ fn run(addr1: Url, addr2: Url) {
 
     let stream = rt.block_on(client.subscribe_events()).unwrap();
     let block_events = stream
-        .for_each(|change_set| {
+        .for_each(move |change_set| {
             change_set
                 .changes
                 .iter()
@@ -92,6 +95,7 @@ fn run(addr1: Url, addr2: Url) {
                                 "block_hash: {:?}, something: {}, who: {:?}",
                                 block_hash, something, who
                             );
+                            recv_packet(&executor, addr2_1.clone(), vec![], vec![vec![]], 0);
                         }
                         _ => {}
                     });
@@ -110,6 +114,25 @@ fn update_client(executor: &TaskExecutor, addr: Url, id: u32, header: Vec<u8>) {
         .build()
         .and_then(|client| client.xt(signer, None))
         .and_then(move |xt| xt.submit(ibc::update_client(id, header)))
+        .map(|_| ())
+        .map_err(|e| println!("{:?}", e));
+
+    executor.spawn(call);
+}
+
+fn recv_packet(
+    executor: &TaskExecutor,
+    addr: Url,
+    packet: Vec<u8>,
+    proof: Vec<Vec<u8>>,
+    proof_height: <Runtime as System>::BlockNumber,
+) {
+    let signer = AccountKeyring::Bob.pair();
+    let call = ClientBuilder::<Runtime>::new()
+        .set_url(addr.clone())
+        .build()
+        .and_then(|client| client.xt(signer, None))
+        .and_then(move |xt| xt.submit(ibc::recv_packet::<Runtime>(packet, proof, proof_height)))
         .map(|_| ())
         .map_err(|e| println!("{:?}", e));
 
