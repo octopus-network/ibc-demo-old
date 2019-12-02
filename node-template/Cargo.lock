@@ -631,19 +631,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "derive_more"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "derive_more"
 version = "0.99.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
@@ -673,17 +660,6 @@ dependencies = [
 name = "doc-comment"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "ed25519-dalek"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "clear_on_drop 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "curve25519-dalek 1.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "ed25519-dalek"
@@ -1194,6 +1170,7 @@ dependencies = [
  "futures-util-preview 0.3.0-alpha.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper 0.13.0-alpha.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.42 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1292,11 +1269,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.65 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
-
-[[package]]
-name = "hex"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "hex"
@@ -1677,30 +1649,30 @@ dependencies = [
 [[package]]
 name = "kvdb"
 version = "0.1.1"
-source = "git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd#03a2ba08f47f4af4219280e660a1ea92cb8896bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-bytes 0.1.1 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)",
+ "parity-bytes 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "kvdb-memorydb"
 version = "0.1.2"
-source = "git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd#03a2ba08f47f4af4219280e660a1ea92cb8896bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "kvdb 0.1.1 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)",
+ "kvdb 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "kvdb-rocksdb"
-version = "0.1.6"
-source = "git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd#03a2ba08f47f4af4219280e660a1ea92cb8896bd"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "fs-swap 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "interleaved-ordered 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "kvdb 0.1.1 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)",
+ "kvdb 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "owning_ref 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2378,6 +2350,7 @@ dependencies = [
  "substrate-client 2.0.0",
  "substrate-consensus-aura 2.0.0",
  "substrate-consensus-aura-primitives 2.0.0",
+ "substrate-consensus-common 2.0.0",
  "substrate-executor 2.0.0",
  "substrate-finality-grandpa 2.0.0",
  "substrate-finality-grandpa-primitives 2.0.0",
@@ -2711,7 +2684,7 @@ dependencies = [
 [[package]]
 name = "parity-bytes"
 version = "0.1.1"
-source = "git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd#03a2ba08f47f4af4219280e660a1ea92cb8896bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "parity-multiaddr"
@@ -2812,11 +2785,6 @@ dependencies = [
  "malloc_size_of_derive 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
-
-[[package]]
-name = "parity-wasm"
-version = "0.40.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "parity-wasm"
@@ -3684,7 +3652,7 @@ dependencies = [
 name = "sp-transaction-pool-api"
 version = "2.0.0"
 dependencies = [
- "derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4010,7 +3978,7 @@ dependencies = [
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "kvdb 0.1.1 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)",
+ "kvdb 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4030,6 +3998,7 @@ dependencies = [
  "substrate-state-machine 2.0.0",
  "substrate-telemetry 2.0.0",
  "substrate-trie 2.0.0",
+ "tracing 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -4041,7 +4010,7 @@ dependencies = [
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "kvdb 0.1.1 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)",
+ "kvdb 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4068,9 +4037,9 @@ name = "substrate-client-db"
 version = "2.0.0"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "kvdb 0.1.1 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)",
- "kvdb-memorydb 0.1.2 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)",
- "kvdb-rocksdb 0.1.6 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)",
+ "kvdb 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "kvdb-memorydb 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "kvdb-rocksdb 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "linked-hash-map 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4199,7 +4168,7 @@ dependencies = [
  "libsecp256k1 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-wasm 0.40.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-wasm 0.41.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sr-io 2.0.0",
  "sr-version 2.0.0",
@@ -4289,7 +4258,7 @@ name = "substrate-keystore"
 version = "2.0.0"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.42 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4401,7 +4370,7 @@ dependencies = [
  "base58 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ed25519-dalek 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ed25519-dalek 1.0.0-pre.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash256-std-hasher 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4634,9 +4603,13 @@ dependencies = [
 name = "substrate-tracing"
 version = "2.0.0"
 dependencies = [
+ "erased-serde 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "grafana-data-source 2.0.0",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.42 (registry+https://github.com/rust-lang/crates.io-index)",
+ "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "substrate-telemetry 2.0.0",
  "tracing-core 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -5654,12 +5627,10 @@ dependencies = [
 "checksum cuckoofilter 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "8dd43f7cfaffe0a386636a10baea2ee05cc50df3b77bea4a456c9572a939bf1f"
 "checksum curve25519-dalek 1.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "8b7dcd30ba50cdf88b55b033456138b7c0ac4afdc436d82e1b79f370f24cc66d"
 "checksum data-encoding 2.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "f4f47ca1860a761136924ddd2422ba77b2ea54fe8cc75b9040804a0d9d32ad97"
-"checksum derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7a141330240c921ec6d074a3e188a7c7ef95668bb95e7d44fa0e5778ec2a7afe"
 "checksum derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)" = "2159be042979966de68315bce7034bb000c775f22e3e834e1c52ff78f041cae8"
 "checksum digest 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "f3d0c8c8752312f9713efd397ff63acb9f85585afbf179282e720e7704954dd5"
 "checksum dns-parser 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c4d33be9473d06f75f58220f71f7a9317aca647dc061dbd3c361b0bef505fbea"
 "checksum doc-comment 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "923dea538cea0aa3025e8685b20d6ee21ef99c4f77e954a30febbaac5ec73a97"
-"checksum ed25519-dalek 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2d07e8b8a8386c3b89a7a4b329fdfa4cb545de2545e9e2ebbc3dd3929253e426"
 "checksum ed25519-dalek 1.0.0-pre.2 (registry+https://github.com/rust-lang/crates.io-index)" = "845aaacc16f01178f33349e7c992ecd0cee095aa5e577f0f4dee35971bd36455"
 "checksum either 1.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "bb1f6b1ce1c140482ea30ddd3335fc0024ac7ee112895426e0a629a6c20adfe3"
 "checksum elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)" = "073be79b6538296faf81c631872676600616073817dd9a440c477ad09b408983"
@@ -5715,7 +5686,6 @@ dependencies = [
 "checksum heapsize 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1679e6ea370dee694f91f1dc469bf94cf8f52051d147aec3e1f9497c6fc22461"
 "checksum heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "20564e78d53d2bb135c343b3f47714a56af2061f1c928fdb541dc7b9fdd94205"
 "checksum hermit-abi 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "307c3c9f937f38e3534b1d6447ecf090cafcc9744e4a6360e8b037b2cf5af120"
-"checksum hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "805026a5d0141ffc30abb3be3173848ad46a1b1664fe632428479619a3644d77"
 "checksum hex 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "023b39be39e3a2da62a94feb433e91e8bcd37676fbc8bea371daf52b7a769a3e"
 "checksum hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "961de220ec9a91af2e1e5bd80d02109155695e516771762381ef8581317066e0"
 "checksum hex-literal-impl 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "9d4c5c844e2fee0bf673d54c2c177f1713b3d2af2ff6e666b49cb7572e6cf42d"
@@ -5753,9 +5723,9 @@ dependencies = [
 "checksum keccak 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "67c21572b4949434e4fc1e1978b99c5f77064153c59d998bf13ecd96fb5ecba7"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
 "checksum kv-log-macro 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "8c54d9f465d530a752e6ebdc217e081a7a614b48cb200f6f0aee21ba6bc9aabb"
-"checksum kvdb 0.1.1 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)" = "<none>"
-"checksum kvdb-memorydb 0.1.2 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)" = "<none>"
-"checksum kvdb-rocksdb 0.1.6 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)" = "<none>"
+"checksum kvdb 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "c1b2f251f01a7224426abdb2563707d856f7de995d821744fd8fa8e2874f69e3"
+"checksum kvdb-memorydb 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "296c12309ed36cb74d59206406adbf1971c3baa56d5410efdb508d8f1c60a351"
+"checksum kvdb-rocksdb 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d3f82177237c1ae67d6ab208a6f790cab569a1d81c1ba02348e0736a99510be3"
 "checksum lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 "checksum lazycell 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b294d6fa9ee409a054354afc4352b0b9ef7ca222c69b8812cbea9e7d2bf3783f"
 "checksum libc 0.2.65 (registry+https://github.com/rust-lang/crates.io-index)" = "1a31a0627fdf1f6a39ec0dd577e101440b7db22672c0901fe00a9a6fbb5c24e8"
@@ -5821,7 +5791,7 @@ dependencies = [
 "checksum once_cell 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "891f486f630e5c5a4916c7e16c4b24a53e78c860b646e9f8e005e4f16847bfed"
 "checksum opaque-debug 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2839e79665f131bdb5782e51f2c6c9599c133c6098982a54c794358bf432529c"
 "checksum owning_ref 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "49a4b8ea2179e6a2e27411d3bca09ca6dd630821cf6894c6c7c8467a8ee7ef13"
-"checksum parity-bytes 0.1.1 (git+https://github.com/paritytech/parity-common?rev=03a2ba08f47f4af4219280e660a1ea92cb8896bd)" = "<none>"
+"checksum parity-bytes 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0c276d76c5333b8c2579e02d49a06733a55b8282d2d9b13e8d53b6406bd7e30a"
 "checksum parity-multiaddr 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "045b3c7af871285146300da35b1932bb6e4639b66c7c98e85d06a32cbc4e8fa7"
 "checksum parity-multiaddr 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "82afcb7461eae5d122543d8be1c57d306ed89af2d6ff7f8b0f5a3cc8f7e511bc"
 "checksum parity-multihash 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "df3a17dc27848fd99e4f87eb0f8c9baba6ede0a6d555400c850ca45254ef4ce3"
@@ -5830,7 +5800,6 @@ dependencies = [
 "checksum parity-scale-codec-derive 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "492ac3aa93d6caa5d20e4e3e0b75d08e2dcd9dd8a50d19529548b6fe11b3f295"
 "checksum parity-send-wrapper 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "aa9777aa91b8ad9dd5aaa04a9b6bcb02c7f1deb952fca5a66034d5e63afc5c6f"
 "checksum parity-util-mem 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "570093f39f786beea92dcc09e45d8aae7841516ac19a50431953ac82a0e8f85c"
-"checksum parity-wasm 0.40.3 (registry+https://github.com/rust-lang/crates.io-index)" = "1e39faaa292a687ea15120b1ac31899b13586446521df6c149e46f1584671e0f"
 "checksum parity-wasm 0.41.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc878dac00da22f8f61e7af3157988424567ab01d9920b962ef7dcbd7cd865"
 "checksum parking_lot 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ab41b4aed082705d1056416ae4468b6ea99d52599ecf3169b00088d43113e337"
 "checksum parking_lot 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "fa7767817701cce701d5585b9c4db3cdd02086398322c1d7e8bf5094a96a2ce7"

@@ -35,6 +35,7 @@ txpool-api = { package = "sp-transaction-pool-api", path = "../substrate/primiti
 network = { package = "substrate-network", path = "../substrate/client/network" }
 aura = { package = "substrate-consensus-aura", path = "../substrate/client/consensus/aura" }
 aura-primitives = { package = "substrate-consensus-aura-primitives", path = "../substrate/primitives/consensus/aura" }
+consensus-common = { package = "substrate-consensus-common", path = "../substrate/primitives/consensus/common" }
 grandpa = { package = "substrate-finality-grandpa", path = "../substrate/client/finality-grandpa" }
 grandpa-primitives = { package = "substrate-finality-grandpa-primitives", path = "../substrate/primitives/finality-grandpa" }
 substrate-client = {  path = "../substrate/client/" }
