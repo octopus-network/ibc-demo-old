@@ -1,5 +1,5 @@
 [package]
-name = "frame"
+name = "calls"
 version = "0.1.0"
 authors = ["Yuanchao Sun <ys@cdot.network>"]
 edition = "2018"

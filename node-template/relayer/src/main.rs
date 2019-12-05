@@ -1,6 +1,6 @@
 use clap::{App, ArgMatches, SubCommand};
 use codec::{Decode, Encode};
-use frame::{ibc, NodeRuntime as Runtime};
+use calls::{ibc, NodeRuntime as Runtime};
 use futures::{future::Future, stream::Stream};
 use sp_keyring::AccountKeyring;
 use substrate_subxt::{system::System, ClientBuilder};
