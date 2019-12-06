@@ -13,7 +13,7 @@ path = "src/main.rs"
 panic = 'unwind'
 
 [workspace]
-members = ['runtime', 'calls', 'relayer']
+members = ['calls', 'cli', 'relayer', 'runtime']
 
 [dependencies]
 futures = "0.3.1"

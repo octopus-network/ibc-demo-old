@@ -9,7 +9,7 @@
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 
 use support::{decl_module, decl_storage, decl_event, dispatch::Result};
-use system::ensure_signed;
+use system::{ensure_root, ensure_signed};
 
 /// The module's configuration trait.
 pub trait Trait: system::Trait {
@@ -50,6 +50,13 @@ decl_module! {
 
 			// here we are raising the Something event
 			Self::deposit_event(RawEvent::SomethingStored(something, who));
+			Ok(())
+		}
+
+		pub fn test_create_client(origin) -> Result {
+			let _who = ensure_root(origin)?;
+
+			ibc::create_client();
 			Ok(())
 		}
 	}
