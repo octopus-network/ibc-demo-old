@@ -1,10 +1,11 @@
+use calls::{ibc, NodeRuntime as Runtime};
 use clap::{App, ArgMatches, SubCommand};
 use codec::{Decode, Encode};
-use calls::{ibc, NodeRuntime as Runtime};
-use futures::{future::Future, stream::Stream};
+use futures::compat::{Future01CompatExt, Stream01CompatExt};
+use futures::stream::StreamExt;
 use sp_keyring::AccountKeyring;
+use std::error::Error;
 use substrate_subxt::{system::System, ClientBuilder};
-use tokio::runtime::TaskExecutor;
 use url::Url;
 
 fn execute(matches: ArgMatches) {
@@ -18,7 +19,9 @@ fn execute(matches: ArgMatches) {
                 .value_of("addr2")
                 .expect("The address of chain-2 is required; qed");
             let addr2 = Url::parse(&format!("ws://{}", addr2)).expect("Is valid url; qed");
-            run(addr1, addr2);
+            tokio_compat::run_std(async {
+                run(addr1, addr2).await.expect("Failed to run relayer");
+            });
         }
         _ => print_usage(&matches),
     }
@@ -45,39 +48,39 @@ fn main() {
     execute(matches);
 }
 
-fn run(addr1: Url, addr2: Url) {
-    let mut rt = tokio::runtime::Runtime::new().unwrap();
-    let executor = rt.executor();
-
-    // TODO:
-    let addr2_1 = addr2.clone();
-
-    let client_future = ClientBuilder::<Runtime>::new()
+async fn run(addr1: Url, addr2: Url) -> Result<(), Box<dyn Error>> {
+    let client = ClientBuilder::<Runtime>::new()
         .set_url(addr1.clone())
-        .build();
-    let client = rt.block_on(client_future).unwrap();
+        .build()
+        .compat()
+        .await?;
 
-    let stream = rt.block_on(client.subscribe_finalized_blocks()).unwrap();
-    let blocks = stream.for_each(move |block_header| {
-        let header_number = block_header.number;
-        let state_root = block_header.state_root;
-        let block_hash = block_header.hash();
-        println!("header_number: {:?}", header_number);
-        println!("state_root: {:?}", state_root);
-        println!("block_hash: {:?}", block_hash);
-        update_client(&executor, addr2.clone(), 0, block_header.encode());
-        Ok(())
+    let mut block_headers = client.subscribe_finalized_blocks().compat().await?.compat();
+    let addr2_1 = addr2.clone();
+    tokio::spawn(async move {
+        while let Some(Ok(block_header)) = block_headers.next().await {
+            let header_number = block_header.number;
+            let state_root = block_header.state_root;
+            let block_hash = block_header.hash();
+            println!("header_number: {:?}", header_number);
+            println!("state_root: {:?}", state_root);
+            println!("block_hash: {:?}", block_hash);
+            let addr2_1 = addr2_1.clone();
+            tokio::spawn(async move {
+                if let Err(e) = update_client(addr2_1.clone(), 0, block_header.encode()).await {
+                    println!("failed to update_client; error = {}", e);
+                }
+            });
+        }
     });
-
-    let executor = rt.executor();
-    executor.spawn(blocks.map_err(|_| ()));
 
     type EventRecords =
         Vec<frame_system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
 
-    let stream = rt.block_on(client.subscribe_events()).unwrap();
-    let block_events = stream
-        .for_each(move |change_set| {
+    let mut block_events = client.subscribe_events().compat().await?.compat();
+    let addr2_2 = addr2.clone();
+    tokio::spawn(async move {
+        while let Some(Ok(change_set)) = block_events.next().await {
             change_set
                 .changes
                 .iter()
@@ -95,46 +98,50 @@ fn run(addr1: Url, addr2: Url) {
                                 "block_hash: {:?}, something: {}, who: {:?}",
                                 block_hash, something, who
                             );
-                            recv_packet(&executor, addr2_1.clone(), vec![], vec![vec![]], 0);
+                            let addr2_2 = addr2_2.clone();
+                            tokio::spawn(async move {
+                                if let Err(e) =
+                                    recv_packet(addr2_2.clone(), vec![], vec![vec![]], 0).await
+                                {
+                                    println!("failed to recv_packet; error = {}", e);
+                                }
+                            });
                         }
                         _ => {}
                     });
                 });
-            Ok(())
-        })
-        .map_err(|e| println!("{:?}", e));
-    rt.spawn(block_events);
-    rt.shutdown_on_idle().wait().unwrap();
+        }
+    });
+    Ok(())
 }
 
-fn update_client(executor: &TaskExecutor, addr: Url, id: u32, header: Vec<u8>) {
+async fn update_client(addr: Url, id: u32, header: Vec<u8>) -> Result<(), Box<dyn Error>> {
     let signer = AccountKeyring::Alice.pair();
-    let call = ClientBuilder::<Runtime>::new()
+    let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
-        .and_then(|client| client.xt(signer, None))
-        .and_then(move |xt| xt.submit(ibc::update_client(id, header)))
-        .map(|_| ())
-        .map_err(|e| println!("{:?}", e));
-
-    executor.spawn(call);
+        .compat()
+        .await?;
+    let xt = client.xt(signer, None).compat().await?;
+    xt.submit(ibc::update_client(id, header)).compat().await?;
+    Ok(())
 }
 
-fn recv_packet(
-    executor: &TaskExecutor,
+async fn recv_packet(
     addr: Url,
     packet: Vec<u8>,
     proof: Vec<Vec<u8>>,
     proof_height: <Runtime as System>::BlockNumber,
-) {
+) -> Result<(), Box<dyn Error>> {
     let signer = AccountKeyring::Bob.pair();
-    let call = ClientBuilder::<Runtime>::new()
+    let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
-        .and_then(|client| client.xt(signer, None))
-        .and_then(move |xt| xt.submit(ibc::recv_packet::<Runtime>(packet, proof, proof_height)))
-        .map(|_| ())
-        .map_err(|e| println!("{:?}", e));
-
-    executor.spawn(call);
+        .compat()
+        .await?;
+    let xt = client.xt(signer, None).compat().await?;
+    xt.submit(ibc::recv_packet::<Runtime>(packet, proof, proof_height))
+        .compat()
+        .await?;
+    Ok(())
 }
