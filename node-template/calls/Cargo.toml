@@ -11,3 +11,4 @@ node-runtime = { path = "../../node-template/runtime", package = "node-template-
 frame-system = { path = "../../substrate/frame/system" }
 pallet-balances = { path = "../../substrate/frame/balances" }
 pallet-indices = { path = "../../substrate/frame/indices" }
+pallet-ibc = { path = "../frame/ibc" }

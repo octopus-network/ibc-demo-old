@@ -16,3 +16,4 @@ sp-keyring = { path = "../../substrate/primitives/keyring", package = "sp-keyrin
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
 frame-system = { path = "../../substrate/frame/system" }
 node-runtime = { path = "../runtime", package = "node-template-runtime" }
+pallet-ibc = { path = "../frame/ibc" }

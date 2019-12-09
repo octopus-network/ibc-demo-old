@@ -67,7 +67,11 @@ async fn run(addr1: Url, addr2: Url) -> Result<(), Box<dyn Error>> {
             println!("block_hash: {:?}", block_hash);
             let addr2_1 = addr2_1.clone();
             tokio::spawn(async move {
-                if let Err(e) = update_client(addr2_1.clone(), 0, block_header.encode()).await {
+                let datagram = pallet_ibc::Datagram::ClientUpdate {
+                    identifier: 0,
+                    header: block_header,
+                };
+                if let Err(e) = submit_datagram(addr2_1.clone(), datagram).await {
                     println!("failed to update_client; error = {}", e);
                 }
             });
@@ -112,6 +116,23 @@ async fn run(addr1: Url, addr2: Url) -> Result<(), Box<dyn Error>> {
                 });
         }
     });
+    Ok(())
+}
+
+async fn submit_datagram(
+    addr: Url,
+    datagram: pallet_ibc::Datagram<<Runtime as System>::Header>,
+) -> Result<(), Box<dyn Error>> {
+    let signer = AccountKeyring::Alice.pair();
+    let client = ClientBuilder::<Runtime>::new()
+        .set_url(addr.clone())
+        .build()
+        .compat()
+        .await?;
+    let xt = client.xt(signer, None).compat().await?;
+    xt.submit(ibc::submit_datagram::<Runtime>(datagram))
+        .compat()
+        .await?;
     Ok(())
 }
 

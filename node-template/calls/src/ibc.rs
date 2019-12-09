@@ -5,6 +5,7 @@ use substrate_subxt::{system::System, Call};
 const MODULE: &str = "Ibc";
 const UPDATE_CLIENT: &str = "update_client";
 const RECV_PACKET: &str = "recv_packet";
+const SUBMIT_DATAGRAM: &str = "submit_datagram";
 
 /// The subset of the `pallet_ibc::Trait` that a client must implement.
 pub trait Ibc: System {}
@@ -44,4 +45,17 @@ pub fn recv_packet<T: Ibc>(
             proof_height,
         },
     )
+}
+
+/// Arguments for submitting datagram
+#[derive(Encode)]
+pub struct SubmitDatagramArgs<T: Ibc> {
+    datagram: pallet_ibc::Datagram<<T as System>::Header>,
+}
+
+/// Submitting a datagram.
+pub fn submit_datagram<T: Ibc>(
+    datagram: pallet_ibc::Datagram<<T as System>::Header>,
+) -> Call<SubmitDatagramArgs<T>> {
+    Call::new(MODULE, SUBMIT_DATAGRAM, SubmitDatagramArgs { datagram })
 }

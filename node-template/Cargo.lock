@@ -407,6 +407,7 @@ dependencies = [
  "frame-system 2.0.0",
  "node-template-runtime 2.0.0",
  "pallet-balances 2.0.0",
+ "pallet-ibc 0.1.0",
  "pallet-indices 2.0.0",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "substrate-subxt 0.3.0",
@@ -480,6 +481,17 @@ dependencies = [
 [[package]]
 name = "cli"
 version = "0.1.0"
+dependencies = [
+ "calls 0.1.0",
+ "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "node-template-runtime 2.0.0",
+ "sp-keyring 2.0.0",
+ "substrate-subxt 0.3.0",
+ "tokio 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-compat 0.1.0-alpha.1 (git+https://github.com/tokio-rs/tokio-compat?branch=eliza/update-to-02)",
+ "url 1.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "cloudabi"
@@ -3427,6 +3439,7 @@ dependencies = [
  "frame-system 2.0.0",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "node-template-runtime 2.0.0",
+ "pallet-ibc 0.1.0",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-keyring 2.0.0",
  "substrate-subxt 0.3.0",

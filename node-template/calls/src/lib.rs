@@ -1,6 +1,7 @@
 use substrate_subxt::{balances::Balances, contracts::Contracts, system::System};
 
 pub mod ibc;
+pub mod template;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct NodeRuntime;
@@ -25,6 +26,8 @@ impl Balances for NodeRuntime {
 impl Contracts for NodeRuntime {}
 
 impl ibc::Ibc for NodeRuntime {}
+
+impl template::TemplateModule for NodeRuntime {}
 
 #[cfg(test)]
 mod tests {

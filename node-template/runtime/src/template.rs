@@ -9,10 +9,10 @@
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 
 use support::{decl_module, decl_storage, decl_event, dispatch::Result};
-use system::{ensure_root, ensure_signed};
+use system::ensure_signed;
 
 /// The module's configuration trait.
-pub trait Trait: system::Trait {
+pub trait Trait: system::Trait + ibc::Trait {
 	// TODO: Add other types and constants required configure this module.
 
 	/// The overarching event type.
@@ -54,9 +54,10 @@ decl_module! {
 		}
 
 		pub fn test_create_client(origin) -> Result {
-			let _who = ensure_root(origin)?;
+			let _who = ensure_signed(origin)?;
 
-			ibc::create_client();
+			<ibc::Module<T>>::create_client();
+
 			Ok(())
 		}
 	}
