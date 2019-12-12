@@ -1,25 +1,47 @@
 //! Implements support for the pallet_ibc module.
+use futures::future::{self, Future};
 use parity_scale_codec::Encode;
-use substrate_subxt::{system::System, Call};
+use substrate_subxt::{balances::Balances, system::System, Call, Client, Error};
 
 const MODULE: &str = "Ibc";
-const UPDATE_CLIENT: &str = "update_client";
 const RECV_PACKET: &str = "recv_packet";
 const SUBMIT_DATAGRAM: &str = "submit_datagram";
 
 /// The subset of the `pallet_ibc::Trait` that a client must implement.
-pub trait Ibc: System {}
+pub trait Ibc: System + Balances {}
 
-/// Arguments for updating client
-#[derive(Encode)]
-pub struct UpdateClientArgs {
-    id: u32,
-    header: Vec<u8>,
+/// The Ibc extension trait for the Client.
+pub trait IbcStore {
+    /// IBC type.
+    type Ibc: Ibc;
+
+    /// Returns the consensus state for a specific identifier.
+    fn query_client_consensus_state(
+        &self,
+        id: &str,
+    ) -> Box<dyn Future<Item = pallet_ibc::Client, Error = Error> + Send>;
 }
 
-/// Updating a client is done by submitting a new Header.
-pub fn update_client(id: u32, header: Vec<u8>) -> Call<UpdateClientArgs> {
-    Call::new(MODULE, UPDATE_CLIENT, UpdateClientArgs { id, header })
+impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
+    type Ibc = T;
+
+    fn query_client_consensus_state(
+        &self,
+        id: &str,
+    ) -> Box<dyn Future<Item = pallet_ibc::Client, Error = Error> + Send> {
+        let clients = || {
+            Ok(self
+                .metadata()
+                .module("Ibc")?
+                .storage("Clients")?
+                .get_map()?)
+        };
+        let map = match clients() {
+            Ok(map) => map,
+            Err(err) => return Box::new(future::err(err)),
+        };
+        Box::new(self.fetch_or(map.key(id.as_bytes().to_vec()), map.default()))
+    }
 }
 
 /// Arguments for receiving packet
@@ -49,13 +71,11 @@ pub fn recv_packet<T: Ibc>(
 
 /// Arguments for submitting datagram
 #[derive(Encode)]
-pub struct SubmitDatagramArgs<T: Ibc> {
-    datagram: pallet_ibc::Datagram<<T as System>::Header>,
+pub struct SubmitDatagramArgs {
+    datagram: pallet_ibc::Datagram,
 }
 
 /// Submitting a datagram.
-pub fn submit_datagram<T: Ibc>(
-    datagram: pallet_ibc::Datagram<<T as System>::Header>,
-) -> Call<SubmitDatagramArgs<T>> {
+pub fn submit_datagram(datagram: pallet_ibc::Datagram) -> Call<SubmitDatagramArgs> {
     Call::new(MODULE, SUBMIT_DATAGRAM, SubmitDatagramArgs { datagram })
 }

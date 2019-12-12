@@ -10,9 +10,15 @@ pub trait TemplateModule: System {}
 
 /// Arguments for creating test client
 #[derive(Encode)]
-pub struct TestCreateClientArgs {}
+pub struct TestCreateClientArgs {
+    identifier: Vec<u8>,
+}
 
 /// Creating a test client.
-pub fn test_create_client() -> Call<TestCreateClientArgs> {
-    Call::new(MODULE, TEST_CREATE_CLIENT, TestCreateClientArgs {})
+pub fn test_create_client(identifier: Vec<u8>) -> Call<TestCreateClientArgs> {
+    Call::new(
+        MODULE,
+        TEST_CREATE_CLIENT,
+        TestCreateClientArgs { identifier },
+    )
 }

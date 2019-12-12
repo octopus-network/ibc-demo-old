@@ -13,8 +13,14 @@ fn execute(matches: ArgMatches) {
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
             let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let identifier = matches
+                .value_of("identifier")
+                .expect("The identifier of chain is required; qed")
+                .to_string();
             tokio_compat::run_std(async {
-                create_client(addr).await.expect("Failed to create client");
+                create_client(addr, identifier)
+                    .await
+                    .expect("Failed to create client");
             });
         }
         _ => print_usage(&matches),
@@ -35,13 +41,14 @@ fn main() {
             .args_from_usage(
                 "
 <addr> 'The address of demo chain'
+<identifier> 'The identifier of demo chain'
 ",
             )])
         .get_matches();
     execute(matches);
 }
 
-async fn create_client(addr: Url) -> Result<(), Box<dyn Error>> {
+async fn create_client(addr: Url, identifier: String) -> Result<(), Box<dyn Error>> {
     let signer = AccountKeyring::Alice.pair();
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
@@ -49,6 +56,8 @@ async fn create_client(addr: Url) -> Result<(), Box<dyn Error>> {
         .compat()
         .await?;
     let xt = client.xt(signer, None).compat().await?;
-    xt.submit(template::test_create_client()).compat().await?;
+    xt.submit(template::test_create_client(identifier.as_bytes().to_vec()))
+        .compat()
+        .await?;
     Ok(())
 }

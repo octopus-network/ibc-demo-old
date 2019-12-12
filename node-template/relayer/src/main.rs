@@ -1,6 +1,9 @@
-use calls::{ibc, NodeRuntime as Runtime};
+use calls::{
+    ibc::{self, IbcStore},
+    NodeRuntime as Runtime,
+};
 use clap::{App, ArgMatches, SubCommand};
-use codec::{Decode, Encode};
+use codec::Decode;
 use futures::compat::{Future01CompatExt, Stream01CompatExt};
 use futures::stream::StreamExt;
 use sp_keyring::AccountKeyring;
@@ -11,16 +14,20 @@ use url::Url;
 fn execute(matches: ArgMatches) {
     match matches.subcommand() {
         ("run", Some(matches)) => {
-            let addr1 = matches
-                .value_of("addr1")
-                .expect("The address of chain-1 is required; qed");
-            let addr1 = Url::parse(&format!("ws://{}", addr1)).expect("Is valid url; qed");
-            let addr2 = matches
-                .value_of("addr2")
-                .expect("The address of chain-2 is required; qed");
-            let addr2 = Url::parse(&format!("ws://{}", addr2)).expect("Is valid url; qed");
+            let appia_addr = matches
+                .value_of("appia-addr")
+                .expect("The address of appia chain is required; qed");
+            let appia_addr =
+                Url::parse(&format!("ws://{}", appia_addr)).expect("Is valid url; qed");
+            let flaminia_addr = matches
+                .value_of("flaminia-addr")
+                .expect("The address of flaminia chain is required; qed");
+            let flaminia_addr =
+                Url::parse(&format!("ws://{}", flaminia_addr)).expect("Is valid url; qed");
             tokio_compat::run_std(async {
-                run(addr1, addr2).await.expect("Failed to run relayer");
+                run(appia_addr, flaminia_addr)
+                    .await
+                    .expect("Failed to run relayer");
             });
         }
         _ => print_usage(&matches),
@@ -40,23 +47,32 @@ fn main() {
             .about("Start a relayer process")
             .args_from_usage(
                 "
-<addr1> 'The address of demo chain-1'
-<addr2> 'The address of demo chain-2'
+<appia-addr> 'The address of demo chain - Appia'
+<flaminia-addr> 'The address of demo chain - Flaminia'
 ",
             )])
         .get_matches();
     execute(matches);
 }
 
-async fn run(addr1: Url, addr2: Url) -> Result<(), Box<dyn Error>> {
-    let client = ClientBuilder::<Runtime>::new()
-        .set_url(addr1.clone())
+async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> {
+    let appia_client = ClientBuilder::<Runtime>::new()
+        .set_url(appia_addr.clone())
         .build()
         .compat()
         .await?;
 
-    let mut block_headers = client.subscribe_finalized_blocks().compat().await?.compat();
-    let addr2_1 = addr2.clone();
+    let flaminia_client = ClientBuilder::<Runtime>::new()
+        .set_url(flaminia_addr.clone())
+        .build()
+        .compat()
+        .await?;
+
+    let mut block_headers = appia_client
+        .subscribe_finalized_blocks()
+        .compat()
+        .await?
+        .compat();
     tokio::spawn(async move {
         while let Some(Ok(block_header)) = block_headers.next().await {
             let header_number = block_header.number;
@@ -65,24 +81,31 @@ async fn run(addr1: Url, addr2: Url) -> Result<(), Box<dyn Error>> {
             println!("header_number: {:?}", header_number);
             println!("state_root: {:?}", state_root);
             println!("block_hash: {:?}", block_hash);
-            let addr2_1 = addr2_1.clone();
-            tokio::spawn(async move {
+            let map = flaminia_client
+                .query_client_consensus_state("appia")
+                .compat()
+                .await
+                .unwrap();
+            println!("Clients: {:?}", map);
+            if map.consensus_state.height < header_number {
                 let datagram = pallet_ibc::Datagram::ClientUpdate {
-                    identifier: 0,
+                    identifier: b"appia".to_vec(),
                     header: block_header,
                 };
-                if let Err(e) = submit_datagram(addr2_1.clone(), datagram).await {
+                let signer = AccountKeyring::Alice.pair();
+                let xt = flaminia_client.xt(signer, None).compat().await.unwrap();
+                if let Err(e) = xt.submit(ibc::submit_datagram(datagram)).compat().await {
                     println!("failed to update_client; error = {}", e);
                 }
-            });
+            }
         }
     });
 
     type EventRecords =
         Vec<frame_system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
 
-    let mut block_events = client.subscribe_events().compat().await?.compat();
-    let addr2_2 = addr2.clone();
+    let mut block_events = appia_client.subscribe_events().compat().await?.compat();
+    let addr2 = flaminia_addr.clone();
     tokio::spawn(async move {
         while let Some(Ok(change_set)) = block_events.next().await {
             change_set
@@ -102,10 +125,10 @@ async fn run(addr1: Url, addr2: Url) -> Result<(), Box<dyn Error>> {
                                 "block_hash: {:?}, something: {}, who: {:?}",
                                 block_hash, something, who
                             );
-                            let addr2_2 = addr2_2.clone();
+                            let addr2 = addr2.clone();
                             tokio::spawn(async move {
                                 if let Err(e) =
-                                    recv_packet(addr2_2.clone(), vec![], vec![vec![]], 0).await
+                                    recv_packet(addr2.clone(), vec![], vec![vec![]], 0).await
                                 {
                                     println!("failed to recv_packet; error = {}", e);
                                 }
@@ -116,35 +139,6 @@ async fn run(addr1: Url, addr2: Url) -> Result<(), Box<dyn Error>> {
                 });
         }
     });
-    Ok(())
-}
-
-async fn submit_datagram(
-    addr: Url,
-    datagram: pallet_ibc::Datagram<<Runtime as System>::Header>,
-) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Alice.pair();
-    let client = ClientBuilder::<Runtime>::new()
-        .set_url(addr.clone())
-        .build()
-        .compat()
-        .await?;
-    let xt = client.xt(signer, None).compat().await?;
-    xt.submit(ibc::submit_datagram::<Runtime>(datagram))
-        .compat()
-        .await?;
-    Ok(())
-}
-
-async fn update_client(addr: Url, id: u32, header: Vec<u8>) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Alice.pair();
-    let client = ClientBuilder::<Runtime>::new()
-        .set_url(addr.clone())
-        .build()
-        .compat()
-        .await?;
-    let xt = client.xt(signer, None).compat().await?;
-    xt.submit(ibc::update_client(id, header)).compat().await?;
     Ok(())
 }
 

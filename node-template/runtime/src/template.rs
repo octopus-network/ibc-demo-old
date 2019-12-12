@@ -8,6 +8,7 @@
 /// For more guidance on Substrate modules, see the example module
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 
+use rstd::prelude::*;
 use support::{decl_module, decl_storage, decl_event, dispatch::Result};
 use system::ensure_signed;
 
@@ -53,10 +54,10 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn test_create_client(origin) -> Result {
+		pub fn test_create_client(origin, identifier: Vec<u8>) -> Result {
 			let _who = ensure_signed(origin)?;
 
-			<ibc::Module<T>>::create_client();
+			<ibc::Module<T>>::create_client(identifier);
 
 			Ok(())
 		}

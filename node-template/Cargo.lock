@@ -405,6 +405,7 @@ name = "calls"
 version = "0.1.0"
 dependencies = [
  "frame-system 2.0.0",
+ "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "node-template-runtime 2.0.0",
  "pallet-balances 2.0.0",
  "pallet-ibc 0.1.0",
