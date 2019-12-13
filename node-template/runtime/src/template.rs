@@ -8,8 +8,8 @@
 /// For more guidance on Substrate modules, see the example module
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 
-use rstd::prelude::*;
-use support::{decl_module, decl_storage, decl_event, dispatch::Result};
+use sp_std::prelude::*;
+use support::{decl_module, decl_storage, decl_event, dispatch};
 use system::ensure_signed;
 
 /// The module's configuration trait.
@@ -41,7 +41,7 @@ decl_module! {
 		// Just a dummy entry point.
 		// function that can be called by the external world as an extrinsics call
 		// takes a parameter of the type `AccountId`, stores it and emits an event
-		pub fn do_something(origin, something: u32) -> Result {
+		pub fn do_something(origin, something: u32) -> dispatch::Result {
 			// TODO: You only need this if you want to check it was signed.
 			let who = ensure_signed(origin)?;
 
@@ -54,7 +54,7 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn test_create_client(origin, identifier: Vec<u8>) -> Result {
+		pub fn test_create_client(origin, identifier: Vec<u8>) -> dispatch::Result {
 			let _who = ensure_signed(origin)?;
 
 			<ibc::Module<T>>::create_client(identifier);
@@ -123,7 +123,7 @@ mod tests {
 
 	// This function basically just builds a genesis storage key/value store according to
 	// our desired mockup.
-	fn new_test_ext() -> runtime_io::TestExternalities {
+	fn new_test_ext() -> sp_io::TestExternalities {
 		system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 	}
 

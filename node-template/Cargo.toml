@@ -24,14 +24,14 @@ tokio = "0.1.22"
 parking_lot = "0.9.0"
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 trie-root = "0.15.2"
-sp-io = { path = "../substrate/primitives/sr-io" }
+sp-io = { path = "../substrate/primitives/io" }
 sc-cli = { path = "../substrate/client/cli" }
 primitives = { package = "sp-core", path = "../substrate/primitives/core" }
 sc-executor = { path = "../substrate/client/executor" }
 sc-service = { path = "../substrate/client/service" }
 inherents = { package = "sp-inherents", path = "../substrate/primitives/inherents" }
 txpool = { package = "sc-transaction-pool", path = "../substrate/client/transaction-pool" }
-txpool-api = { package = "sp-transaction-pool-api", path = "../substrate/primitives/transaction-pool" }
+txpool-api = { package = "sp-transaction-pool", path = "../substrate/primitives/transaction-pool" }
 network = { package = "sc-network", path = "../substrate/client/network" }
 aura = { package = "sc-consensus-aura", path = "../substrate/client/consensus/aura" }
 aura-primitives = { package = "sp-consensus-aura", path = "../substrate/primitives/consensus/aura" }
