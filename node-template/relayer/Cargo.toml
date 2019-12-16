@@ -10,7 +10,7 @@ tokio = { version = "0.2", features = ["full"] }
 url = "1.7"
 futures = { version = "0.3.1", features = ["compat"] }
 substrate-subxt = { path = "../../substrate-subxt" }
-tokio-compat = { git = "https://github.com/tokio-rs/tokio-compat", version = "0.1.0-alpha.1", branch = "eliza/update-to-02" }
+tokio-compat = { git = "https://github.com/tokio-rs/tokio-compat", version = "0.1.0" }
 calls = { path = "../calls" }
 sp-keyring = { path = "../../substrate/primitives/keyring", package = "sp-keyring" }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
