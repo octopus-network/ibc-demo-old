@@ -1,6 +1,6 @@
 //! Implements support for the pallet_ibc module.
+use codec::Encode;
 use futures::future::{self, Future};
-use parity_scale_codec::Encode;
 use sp_core::H256;
 use substrate_subxt::{balances::Balances, system::System, Call, Client, Error};
 

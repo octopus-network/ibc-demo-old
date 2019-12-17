@@ -26,22 +26,22 @@ codec = { package = "parity-scale-codec", version = "1.0.0" }
 trie-root = "0.15.2"
 sp-io = { path = "../substrate/primitives/io" }
 sc-cli = { path = "../substrate/client/cli" }
-primitives = { package = "sp-core", path = "../substrate/primitives/core" }
+sp-core = { path = "../substrate/primitives/core" }
 sc-executor = { path = "../substrate/client/executor" }
 sc-service = { path = "../substrate/client/service" }
-inherents = { package = "sp-inherents", path = "../substrate/primitives/inherents" }
-txpool = { package = "sc-transaction-pool", path = "../substrate/client/transaction-pool" }
-txpool-api = { package = "sp-transaction-pool", path = "../substrate/primitives/transaction-pool" }
-network = { package = "sc-network", path = "../substrate/client/network" }
-aura = { package = "sc-consensus-aura", path = "../substrate/client/consensus/aura" }
-aura-primitives = { package = "sp-consensus-aura", path = "../substrate/primitives/consensus/aura" }
-consensus-common = { package = "sp-consensus", path = "../substrate/primitives/consensus/common" }
+sp-inherents = { path = "../substrate/primitives/inherents" }
+sc-transaction-pool = { path = "../substrate/client/transaction-pool" }
+sp-transaction-pool = { path = "../substrate/primitives/transaction-pool" }
+sc-network = { path = "../substrate/client/network" }
+sc-consensus-aura = { path = "../substrate/client/consensus/aura" }
+sp-consensus-aura = { path = "../substrate/primitives/consensus/aura" }
+sp-consensus = { path = "../substrate/primitives/consensus/common" }
 grandpa = { package = "sc-finality-grandpa", path = "../substrate/client/finality-grandpa" }
 grandpa-primitives = { package = "sp-finality-grandpa", path = "../substrate/primitives/finality-grandpa" }
 sc-client = {  path = "../substrate/client/" }
-runtime = { package = "node-template-runtime", path = "runtime" }
+node-template-runtime = { path = "runtime" }
 sp-runtime = { path = "../substrate/primitives/runtime" }
-basic-authorship = { package = "sc-basic-authority", path  = "../substrate/client/basic-authorship"}
+sc-basic-authority = { path  = "../substrate/client/basic-authorship"}
 
 [build-dependencies]
 vergen = "3.0.4"

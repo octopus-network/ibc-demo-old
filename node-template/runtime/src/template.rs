@@ -9,9 +9,9 @@
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 
 use sp_std::prelude::*;
-use support::{decl_module, decl_storage, decl_event, dispatch};
+use frame_support::{decl_module, decl_storage, decl_event, dispatch};
 use system::ensure_signed;
-use primitives::H256;
+use sp_core::H256;
 
 /// The module's configuration trait.
 pub trait Trait: system::Trait + ibc::Trait {
@@ -79,8 +79,8 @@ decl_event!(
 mod tests {
 	use super::*;
 
-	use primitives::H256;
-	use support::{impl_outer_origin, assert_ok, parameter_types, weights::Weight};
+	use sp_core::H256;
+	use frame_support::{impl_outer_origin, assert_ok, parameter_types, weights::Weight};
 	use sp_runtime::{
 		traits::{BlakeTwo256, IdentityLookup}, testing::Header, Perbill,
 	};

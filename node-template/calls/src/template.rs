@@ -1,5 +1,5 @@
 //! Implements support for the template module.
-use parity_scale_codec::Encode;
+use codec::Encode;
 use sp_core::H256;
 use substrate_subxt::{system::System, Call};
 

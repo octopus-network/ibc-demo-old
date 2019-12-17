@@ -104,7 +104,7 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
     });
 
     type EventRecords =
-        Vec<frame_system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
+        Vec<system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
 
     let mut block_events = appia_client.subscribe_events().compat().await?.compat();
     let addr2 = flaminia_addr.clone();

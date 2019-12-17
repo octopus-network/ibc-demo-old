@@ -10,11 +10,11 @@ tokio = { version = "0.2", features = ["full"] }
 url = "1.7"
 futures = { version = "0.3.1", features = ["compat"] }
 substrate-subxt = { path = "../../substrate-subxt" }
-tokio-compat = { git = "https://github.com/tokio-rs/tokio-compat", version = "0.1.0" }
+tokio-compat = { package = "tokio-compat", version = "0.1.0" }
 calls = { path = "../calls" }
-sp-keyring = { path = "../../substrate/primitives/keyring", package = "sp-keyring" }
-sp-core = { path = "../../substrate/primitives/core", package = "sp-core" }
+sp-keyring = { path = "../../substrate/primitives/keyring" }
+sp-core = { path = "../../substrate/primitives/core" }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
-frame-system = { path = "../../substrate/frame/system" }
+system = { package = "frame-system", path = "../../substrate/frame/system" }
 node-runtime = { path = "../runtime", package = "node-template-runtime" }
 pallet-ibc = { path = "../frame/ibc" }
