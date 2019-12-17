@@ -58,7 +58,26 @@ decl_module! {
 		pub fn test_create_client(origin, identifier: H256) -> dispatch::Result {
 			let _who = ensure_signed(origin)?;
 
-			<ibc::Module<T>>::create_client(identifier);
+			<ibc::Module<T>>::create_client(identifier)?;
+
+			Ok(())
+		}
+
+		pub fn test_open_handshake(
+			origin,
+			identifier: H256,
+			desired_counterparty_connection_identifier: H256,
+			client_identifier: H256,
+			counterparty_client_identifier: H256
+		) -> dispatch::Result {
+			let _who = ensure_signed(origin)?;
+
+			<ibc::Module<T>>::conn_open_init(
+				identifier,
+				desired_counterparty_connection_identifier,
+				client_identifier,
+				counterparty_client_identifier
+			)?;
 
 			Ok(())
 		}

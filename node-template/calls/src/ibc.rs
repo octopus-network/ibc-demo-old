@@ -1,6 +1,9 @@
 //! Implements support for the pallet_ibc module.
 use codec::Encode;
-use futures::future::{self, Future};
+use futures::{
+    future::{self, Future},
+    stream::Stream,
+};
 use sp_core::H256;
 use substrate_subxt::{balances::Balances, system::System, Call, Client, Error};
 
@@ -21,6 +24,11 @@ pub trait IbcStore {
         &self,
         id: &H256,
     ) -> Box<dyn Future<Item = pallet_ibc::Client, Error = Error> + Send>;
+
+    fn get_connections_using_client(
+        &self,
+        counterparty_client_identifier: &H256,
+    ) -> Box<dyn Stream<Item = pallet_ibc::ConnectionEnd, Error = Error> + Send>;
 }
 
 impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
@@ -42,6 +50,13 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
             Err(err) => return Box::new(future::err(err)),
         };
         Box::new(self.fetch_or(map.key(id), map.default()))
+    }
+
+    fn get_connections_using_client(
+        &self,
+        counterparty_client_identifier: &H256,
+    ) -> Box<dyn Stream<Item = pallet_ibc::ConnectionEnd, Error = Error> + Send> {
+        Box::new(future::err(Error::Other("todo".to_string())).into_stream())
     }
 }
 
