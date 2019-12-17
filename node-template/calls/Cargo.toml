@@ -13,3 +13,4 @@ frame-system = { path = "../../substrate/frame/system" }
 pallet-balances = { path = "../../substrate/frame/balances" }
 pallet-indices = { path = "../../substrate/frame/indices" }
 pallet-ibc = { path = "../frame/ibc" }
+sp-core = { path = "../../substrate/primitives/core", package = "sp-core" }

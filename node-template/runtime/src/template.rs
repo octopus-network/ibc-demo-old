@@ -11,6 +11,7 @@
 use sp_std::prelude::*;
 use support::{decl_module, decl_storage, decl_event, dispatch};
 use system::ensure_signed;
+use primitives::H256;
 
 /// The module's configuration trait.
 pub trait Trait: system::Trait + ibc::Trait {
@@ -54,7 +55,7 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn test_create_client(origin, identifier: Vec<u8>) -> dispatch::Result {
+		pub fn test_create_client(origin, identifier: H256) -> dispatch::Result {
 			let _who = ensure_signed(origin)?;
 
 			<ibc::Module<T>>::create_client(identifier);

@@ -1,6 +1,7 @@
 use calls::{template, NodeRuntime as Runtime};
 use clap::{App, ArgMatches, SubCommand};
 use futures::compat::Future01CompatExt;
+use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_keyring::AccountKeyring;
 use std::error::Error;
 use substrate_subxt::ClientBuilder;
@@ -13,11 +14,13 @@ fn execute(matches: ArgMatches) {
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
             let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
-            let identifier = matches
-                .value_of("identifier")
-                .expect("The identifier of chain is required; qed")
-                .to_string();
-            tokio_compat::run_std(async {
+            let chain_name = matches
+                .value_of("chain-name")
+                .expect("The name of chain is required; qed");
+            let identifier = Blake2Hasher::hash(chain_name.as_bytes());
+            println!("identifier: {:?}", identifier);
+
+            tokio_compat::run_std(async move {
                 create_client(addr, identifier)
                     .await
                     .expect("Failed to create client");
@@ -41,14 +44,14 @@ fn main() {
             .args_from_usage(
                 "
 <addr> 'The address of demo chain'
-<identifier> 'The identifier of demo chain'
+<chain-name> 'The name of demo chain'
 ",
             )])
         .get_matches();
     execute(matches);
 }
 
-async fn create_client(addr: Url, identifier: String) -> Result<(), Box<dyn Error>> {
+async fn create_client(addr: Url, identifier: H256) -> Result<(), Box<dyn Error>> {
     let signer = AccountKeyring::Alice.pair();
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
@@ -56,7 +59,7 @@ async fn create_client(addr: Url, identifier: String) -> Result<(), Box<dyn Erro
         .compat()
         .await?;
     let xt = client.xt(signer, None).compat().await?;
-    xt.submit(template::test_create_client(identifier.as_bytes().to_vec()))
+    xt.submit(template::test_create_client(identifier))
         .compat()
         .await?;
     Ok(())

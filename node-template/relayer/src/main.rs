@@ -6,6 +6,7 @@ use clap::{App, ArgMatches, SubCommand};
 use codec::Decode;
 use futures::compat::{Future01CompatExt, Stream01CompatExt};
 use futures::stream::StreamExt;
+use sp_core::{Blake2Hasher, Hasher};
 use sp_keyring::AccountKeyring;
 use std::error::Error;
 use substrate_subxt::{system::System, ClientBuilder};
@@ -73,6 +74,7 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
         .compat()
         .await?
         .compat();
+    let identifier = Blake2Hasher::hash(b"appia");
     tokio::spawn(async move {
         while let Some(Ok(block_header)) = block_headers.next().await {
             let header_number = block_header.number;
@@ -82,14 +84,14 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
             println!("state_root: {:?}", state_root);
             println!("block_hash: {:?}", block_hash);
             let map = flaminia_client
-                .query_client_consensus_state("appia")
+                .query_client_consensus_state(&identifier)
                 .compat()
                 .await
                 .unwrap();
             println!("Clients: {:?}", map);
             if map.consensus_state.height < header_number {
                 let datagram = pallet_ibc::Datagram::ClientUpdate {
-                    identifier: b"appia".to_vec(),
+                    identifier: identifier,
                     header: block_header,
                 };
                 let signer = AccountKeyring::Alice.pair();

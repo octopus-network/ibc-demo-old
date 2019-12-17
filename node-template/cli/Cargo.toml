@@ -13,4 +13,5 @@ substrate-subxt = { path = "../../substrate-subxt" }
 tokio-compat = { git = "https://github.com/tokio-rs/tokio-compat", version = "0.1.0" }
 calls = { path = "../calls" }
 sp-keyring = { path = "../../substrate/primitives/keyring", package = "sp-keyring" }
+sp-core = { path = "../../substrate/primitives/core", package = "sp-core" }
 node-runtime = { path = "../runtime", package = "node-template-runtime" }

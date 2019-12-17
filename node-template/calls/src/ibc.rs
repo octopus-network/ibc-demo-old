@@ -1,6 +1,7 @@
 //! Implements support for the pallet_ibc module.
 use futures::future::{self, Future};
 use parity_scale_codec::Encode;
+use sp_core::H256;
 use substrate_subxt::{balances::Balances, system::System, Call, Client, Error};
 
 const MODULE: &str = "Ibc";
@@ -18,7 +19,7 @@ pub trait IbcStore {
     /// Returns the consensus state for a specific identifier.
     fn query_client_consensus_state(
         &self,
-        id: &str,
+        id: &H256,
     ) -> Box<dyn Future<Item = pallet_ibc::Client, Error = Error> + Send>;
 }
 
@@ -27,7 +28,7 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
 
     fn query_client_consensus_state(
         &self,
-        id: &str,
+        id: &H256,
     ) -> Box<dyn Future<Item = pallet_ibc::Client, Error = Error> + Send> {
         let clients = || {
             Ok(self
@@ -40,7 +41,7 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
             Ok(map) => map,
             Err(err) => return Box::new(future::err(err)),
         };
-        Box::new(self.fetch_or(map.key(id.as_bytes().to_vec()), map.default()))
+        Box::new(self.fetch_or(map.key(id), map.default()))
     }
 }
 
