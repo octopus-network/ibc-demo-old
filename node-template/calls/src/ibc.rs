@@ -1,9 +1,6 @@
 //! Implements support for the pallet_ibc module.
 use codec::Encode;
-use futures::{
-    future::{self, Future},
-    stream::Stream,
-};
+use futures::future::{self, Future};
 use sp_core::H256;
 use substrate_subxt::{balances::Balances, system::System, Call, Client, Error};
 
@@ -28,7 +25,12 @@ pub trait IbcStore {
     fn get_connections_using_client(
         &self,
         counterparty_client_identifier: &H256,
-    ) -> Box<dyn Stream<Item = pallet_ibc::ConnectionEnd, Error = Error> + Send>;
+    ) -> Box<dyn Future<Item = Vec<H256>, Error = Error> + Send>;
+
+    fn get_connection(
+        &self,
+        connection_identifier: &H256,
+    ) -> Box<dyn Future<Item = pallet_ibc::ConnectionEnd, Error = Error> + Send>;
 }
 
 impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
@@ -52,11 +54,45 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
         Box::new(self.fetch_or(map.key(id), map.default()))
     }
 
+    // TODO
     fn get_connections_using_client(
         &self,
         counterparty_client_identifier: &H256,
-    ) -> Box<dyn Stream<Item = pallet_ibc::ConnectionEnd, Error = Error> + Send> {
-        Box::new(future::err(Error::Other("todo".to_string())).into_stream())
+    ) -> Box<dyn Future<Item = Vec<H256>, Error = Error> + Send> {
+        let clients = || {
+            Ok(self
+                .metadata()
+                .module("Ibc")?
+                .storage("Clients")?
+                .get_map()?)
+        };
+        let map = match clients() {
+            Ok(map) => map,
+            Err(err) => return Box::new(future::err(err)),
+        };
+        Box::new(
+            self.fetch_or(map.key(counterparty_client_identifier), map.default())
+                .map(|client: pallet_ibc::Client| client.connections),
+        )
+    }
+
+    // TODO
+    fn get_connection(
+        &self,
+        connection_identifier: &H256,
+    ) -> Box<dyn Future<Item = pallet_ibc::ConnectionEnd, Error = Error> + Send> {
+        let connections = || {
+            Ok(self
+                .metadata()
+                .module("Ibc")?
+                .storage("Connections")?
+                .get_map()?)
+        };
+        let map = match connections() {
+            Ok(map) => map,
+            Err(err) => return Box::new(future::err(err)),
+        };
+        Box::new(self.fetch_or(map.key(connection_identifier), map.default()))
     }
 }
 

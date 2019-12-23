@@ -74,7 +74,9 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
         .compat()
         .await?
         .compat();
-    let identifier = Blake2Hasher::hash(b"appia");
+    let appia = Blake2Hasher::hash(b"appia");
+    let flaminia = Blake2Hasher::hash(b"flaminia");
+    let appia_client_1 = appia_client.clone();
     tokio::spawn(async move {
         while let Some(Ok(block_header)) = block_headers.next().await {
             let header_number = block_header.number;
@@ -84,14 +86,14 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
             println!("state_root: {:?}", state_root);
             println!("block_hash: {:?}", block_hash);
             let map = flaminia_client
-                .query_client_consensus_state(&identifier)
+                .query_client_consensus_state(&appia)
                 .compat()
                 .await
                 .unwrap();
             println!("Clients: {:?}", map);
             if map.consensus_state.height < header_number {
                 let datagram = pallet_ibc::Datagram::ClientUpdate {
-                    identifier: identifier,
+                    identifier: appia,
                     header: block_header,
                 };
                 let signer = AccountKeyring::Alice.pair();
@@ -100,11 +102,16 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
                     println!("failed to update_client; error = {}", e);
                 }
             }
+            let map = appia_client_1
+                .get_connections_using_client(&flaminia)
+                .compat()
+                .await
+                .unwrap();
+            println!("Clients: {:?}", map);
         }
     });
 
-    type EventRecords =
-        Vec<system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
+    type EventRecords = Vec<system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
 
     let mut block_events = appia_client.subscribe_events().compat().await?.compat();
     let addr2 = flaminia_addr.clone();
