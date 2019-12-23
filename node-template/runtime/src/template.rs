@@ -42,7 +42,7 @@ decl_module! {
 		// Just a dummy entry point.
 		// function that can be called by the external world as an extrinsics call
 		// takes a parameter of the type `AccountId`, stores it and emits an event
-		pub fn do_something(origin, something: u32) -> dispatch::Result {
+		pub fn do_something(origin, something: u32) -> dispatch::DispatchResult {
 			// TODO: You only need this if you want to check it was signed.
 			let who = ensure_signed(origin)?;
 
@@ -55,7 +55,7 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn test_create_client(origin, identifier: H256) -> dispatch::Result {
+		pub fn test_create_client(origin, identifier: H256) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
 
 			<ibc::Module<T>>::create_client(identifier)?;
@@ -69,7 +69,7 @@ decl_module! {
 			desired_counterparty_connection_identifier: H256,
 			client_identifier: H256,
 			counterparty_client_identifier: H256
-		) -> dispatch::Result {
+		) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
 
 			<ibc::Module<T>>::conn_open_init(
@@ -135,6 +135,7 @@ mod tests {
 		type MaximumBlockLength = MaximumBlockLength;
 		type AvailableBlockRatio = AvailableBlockRatio;
 		type Version = ();
+		type ModuleToIndex = ();
 	}
 	impl Trait for Test {
 		type Event = ();

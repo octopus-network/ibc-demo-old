@@ -48,7 +48,6 @@ std = [
 	"grandpa/std",
 	"indices/std",
 	"randomness-collective-flip/std",
-	"ibc/std",
 	"safe-mix/std",
 	"serde",
 	"sp-api/std",
@@ -67,4 +66,5 @@ std = [
 	"system/std",
 	"timestamp/std",
 	"transaction-payment/std",
+	"ibc/std",
 ]
