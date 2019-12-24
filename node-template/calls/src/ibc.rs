@@ -5,7 +5,6 @@ use sp_core::H256;
 use substrate_subxt::{balances::Balances, system::System, Call, Client, Error};
 
 const MODULE: &str = "Ibc";
-const RECV_PACKET: &str = "recv_packet";
 const SUBMIT_DATAGRAM: &str = "submit_datagram";
 
 /// The subset of the `pallet_ibc::Trait` that a client must implement.
@@ -19,12 +18,12 @@ pub trait IbcStore {
     /// Returns the consensus state for a specific identifier.
     fn query_client_consensus_state(
         &self,
-        id: &H256,
+        client_identifier: &H256,
     ) -> Box<dyn Future<Item = pallet_ibc::Client, Error = Error> + Send>;
 
     fn get_connections_using_client(
         &self,
-        counterparty_client_identifier: &H256,
+        client_identifier: &H256,
     ) -> Box<dyn Future<Item = Vec<H256>, Error = Error> + Send>;
 
     fn get_connection(
@@ -38,7 +37,7 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
 
     fn query_client_consensus_state(
         &self,
-        id: &H256,
+        client_identifier: &H256,
     ) -> Box<dyn Future<Item = pallet_ibc::Client, Error = Error> + Send> {
         let clients = || {
             Ok(self
@@ -51,13 +50,13 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
             Ok(map) => map,
             Err(err) => return Box::new(future::err(err)),
         };
-        Box::new(self.fetch_or(map.key(id), map.default()))
+        Box::new(self.fetch_or(map.key(client_identifier), map.default()))
     }
 
     // TODO
     fn get_connections_using_client(
         &self,
-        counterparty_client_identifier: &H256,
+        client_identifier: &H256,
     ) -> Box<dyn Future<Item = Vec<H256>, Error = Error> + Send> {
         let clients = || {
             Ok(self
@@ -71,7 +70,7 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
             Err(err) => return Box::new(future::err(err)),
         };
         Box::new(
-            self.fetch_or(map.key(counterparty_client_identifier), map.default())
+            self.fetch_or(map.key(client_identifier), map.default())
                 .map(|client: pallet_ibc::Client| client.connections),
         )
     }
@@ -94,31 +93,6 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
         };
         Box::new(self.fetch_or(map.key(connection_identifier), map.default()))
     }
-}
-
-/// Arguments for receiving packet
-#[derive(Encode)]
-pub struct RecvPacketArgs<T: Ibc> {
-    packet: Vec<u8>,
-    proof: Vec<Vec<u8>>,
-    proof_height: <T as System>::BlockNumber,
-}
-
-/// Receiving a IBC packet.
-pub fn recv_packet<T: Ibc>(
-    packet: Vec<u8>,
-    proof: Vec<Vec<u8>>,
-    proof_height: <T as System>::BlockNumber,
-) -> Call<RecvPacketArgs<T>> {
-    Call::new(
-        MODULE,
-        RECV_PACKET,
-        RecvPacketArgs {
-            packet,
-            proof,
-            proof_height,
-        },
-    )
 }
 
 /// Arguments for submitting datagram

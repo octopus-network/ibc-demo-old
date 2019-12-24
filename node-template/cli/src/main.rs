@@ -81,7 +81,7 @@ fn main() {
             .args_from_usage(
                 "
 <addr> 'The address of demo chain'
-<chain-name> 'The name of demo chain'
+<chain-name> 'The name of counterparty demo chain'
 ",
             )])
         .subcommands(vec![SubCommand::with_name("open-handshake")
