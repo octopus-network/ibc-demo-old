@@ -5,7 +5,7 @@ use substrate_subxt::{system::System, Call};
 
 const MODULE: &str = "TemplateModule";
 const TEST_CREATE_CLIENT: &str = "test_create_client";
-const TEST_OPEN_HANDSHAKE: &str = "test_open_handshake";
+const TEST_CONN_OPEN_INIT: &str = "test_conn_open_init";
 
 /// The subset of the `template::Trait` that a client must implement.
 pub trait TemplateModule: System {}
@@ -25,26 +25,26 @@ pub fn test_create_client(identifier: H256) -> Call<TestCreateClientArgs> {
     )
 }
 
-/// Arguments for opening handshake
+/// Arguments for opening connection.
 #[derive(Encode)]
-pub struct TestOpenHandshakeArgs {
+pub struct TestConnOpenInitArgs {
     identifier: H256,
     desired_counterparty_connection_identifier: H256,
     client_identifier: H256,
     counterparty_client_identifier: H256,
 }
 
-/// Opening handshake.
-pub fn test_open_handshake(
+/// Opening connection.
+pub fn test_conn_open_init(
     identifier: H256,
     desired_counterparty_connection_identifier: H256,
     client_identifier: H256,
     counterparty_client_identifier: H256,
-) -> Call<TestOpenHandshakeArgs> {
+) -> Call<TestConnOpenInitArgs> {
     Call::new(
         MODULE,
-        TEST_OPEN_HANDSHAKE,
-        TestOpenHandshakeArgs {
+        TEST_CONN_OPEN_INIT,
+        TestConnOpenInitArgs {
             identifier,
             desired_counterparty_connection_identifier,
             client_identifier,

@@ -63,7 +63,7 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn test_open_handshake(
+		pub fn test_conn_open_init(
 			origin,
 			identifier: H256,
 			desired_counterparty_connection_identifier: H256,

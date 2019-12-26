@@ -27,7 +27,7 @@ fn execute(matches: ArgMatches) {
                     .expect("Failed to create client");
             });
         }
-        ("open-handshake", Some(matches)) => {
+        ("conn-open-init", Some(matches)) => {
             let addr = matches
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
@@ -52,7 +52,7 @@ fn execute(matches: ArgMatches) {
             let desired_counterparty_connection_identifier = H256::from_slice(&data);
 
             tokio_compat::run_std(async move {
-                open_handshake(
+                conn_open_init(
                     addr,
                     identifier,
                     desired_counterparty_connection_identifier,
@@ -60,7 +60,7 @@ fn execute(matches: ArgMatches) {
                     counterparty_client_identifier,
                 )
                 .await
-                .expect("Failed to open handshake");
+                .expect("Failed to open connection");
             });
         }
         _ => print_usage(&matches),
@@ -84,8 +84,8 @@ fn main() {
 <chain-name> 'The name of counterparty demo chain'
 ",
             )])
-        .subcommands(vec![SubCommand::with_name("open-handshake")
-            .about("Open handshake")
+        .subcommands(vec![SubCommand::with_name("conn-open-init")
+            .about("Open a new connection")
             .args_from_usage(
                 "
 <addr> 'The address of demo chain'
@@ -111,7 +111,7 @@ async fn create_client(addr: Url, identifier: H256) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-async fn open_handshake(
+async fn conn_open_init(
     addr: Url,
     identifier: H256,
     desired_counterparty_connection_identifier: H256,
@@ -125,7 +125,7 @@ async fn open_handshake(
         .compat()
         .await?;
     let xt = client.xt(signer, None).compat().await?;
-    xt.submit(template::test_open_handshake(
+    xt.submit(template::test_conn_open_init(
         identifier,
         desired_counterparty_connection_identifier,
         client_identifier,
