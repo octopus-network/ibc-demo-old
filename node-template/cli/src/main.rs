@@ -63,6 +63,40 @@ fn execute(matches: ArgMatches) {
                 .expect("Failed to open connection");
             });
         }
+        ("bind-port", Some(matches)) => {
+            let addr = matches
+                .value_of("addr")
+                .expect("The address of chain is required; qed");
+            let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let identifier = matches
+                .value_of("identifier")
+                .expect("The identifier of port is required; qed");
+            let identifier = identifier.as_bytes().to_vec();
+            println!("identifier: {:?}", identifier);
+
+            tokio_compat::run_std(async move {
+                bind_port(addr, identifier)
+                    .await
+                    .expect("Failed to bind port");
+            });
+        }
+        ("release-port", Some(matches)) => {
+            let addr = matches
+                .value_of("addr")
+                .expect("The address of chain is required; qed");
+            let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let identifier = matches
+                .value_of("identifier")
+                .expect("The identifier of port is required; qed");
+            let identifier = identifier.as_bytes().to_vec();
+            println!("identifier: {:?}", identifier);
+
+            tokio_compat::run_std(async move {
+                release_port(addr, identifier)
+                    .await
+                    .expect("Failed to release port");
+            });
+        }
         _ => print_usage(&matches),
     }
 }
@@ -91,6 +125,22 @@ fn main() {
 <addr> 'The address of demo chain'
 <client-identifier> 'The client identifier of demo chain'
 <counterparty-client-identifier> 'The client identifier of counterparty demo chain'
+",
+            )])
+        .subcommands(vec![SubCommand::with_name("bind-port")
+            .about("Bind module to an unallocated port")
+            .args_from_usage(
+                "
+<addr> 'The address of demo chain'
+<identifier> 'The identifier of port'
+",
+            )])
+        .subcommands(vec![SubCommand::with_name("release-port")
+            .about("Release a port")
+            .args_from_usage(
+                "
+<addr> 'The address of demo chain'
+<identifier> 'The identifier of port'
 ",
             )])
         .get_matches();
@@ -133,5 +183,33 @@ async fn conn_open_init(
     ))
     .compat()
     .await?;
+    Ok(())
+}
+
+async fn bind_port(addr: Url, identifier: Vec<u8>) -> Result<(), Box<dyn Error>> {
+    let signer = AccountKeyring::Alice.pair();
+    let client = ClientBuilder::<Runtime>::new()
+        .set_url(addr.clone())
+        .build()
+        .compat()
+        .await?;
+    let xt = client.xt(signer, None).compat().await?;
+    xt.submit(template::test_bind_port(identifier))
+        .compat()
+        .await?;
+    Ok(())
+}
+
+async fn release_port(addr: Url, identifier: Vec<u8>) -> Result<(), Box<dyn Error>> {
+    let signer = AccountKeyring::Alice.pair();
+    let client = ClientBuilder::<Runtime>::new()
+        .set_url(addr.clone())
+        .build()
+        .compat()
+        .await?;
+    let xt = client.xt(signer, None).compat().await?;
+    xt.submit(template::test_release_port(identifier))
+        .compat()
+        .await?;
     Ok(())
 }

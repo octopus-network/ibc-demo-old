@@ -9,7 +9,7 @@
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 
 use sp_std::prelude::*;
-use frame_support::{decl_module, decl_storage, decl_event, dispatch};
+use frame_support::{decl_module, decl_storage, decl_event, dispatch, traits::ModuleToIndex};
 use system::ensure_signed;
 use sp_core::H256;
 
@@ -78,6 +78,26 @@ decl_module! {
 				client_identifier,
 				counterparty_client_identifier
 			)?;
+
+			Ok(())
+		}
+
+		pub fn test_bind_port(origin, identifier: Vec<u8>) -> dispatch::DispatchResult {
+			let _who = ensure_signed(origin)?;
+			let module_index = T::ModuleToIndex::module_to_index::<u8>()
+				.expect("Every active module has an index in the runtime; qed") as u8;
+
+			<ibc::Module<T>>::bind_port(identifier, module_index)?;
+
+			Ok(())
+		}
+
+		pub fn test_release_port(origin, identifier: Vec<u8>) -> dispatch::DispatchResult {
+			let _who = ensure_signed(origin)?;
+			let module_index = T::ModuleToIndex::module_to_index::<u8>()
+				.expect("Every active module has an index in the runtime; qed") as u8;
+
+			<ibc::Module<T>>::release_port(identifier, module_index)?;
 
 			Ok(())
 		}
