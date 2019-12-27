@@ -8,6 +8,7 @@ const TEST_CREATE_CLIENT: &str = "test_create_client";
 const TEST_CONN_OPEN_INIT: &str = "test_conn_open_init";
 const TEST_BIND_PORT: &str = "test_bind_port";
 const TEST_RELEASE_PORT: &str = "test_release_port";
+const TEST_CHAN_OPEN_INIT: &str = "test_chan_open_init";
 
 /// The subset of the `template::Trait` that a client must implement.
 pub trait TemplateModule: System {}
@@ -78,5 +79,39 @@ pub fn test_release_port(identifier: Vec<u8>) -> Call<TestReleasePortArgs> {
         MODULE,
         TEST_RELEASE_PORT,
         TestReleasePortArgs { identifier },
+    )
+}
+
+/// Arguments for opening channel.
+#[derive(Encode)]
+pub struct TestChanOpenInitArgs {
+    ordered: bool,
+    connection_hops: Vec<H256>,
+    port_identifier: Vec<u8>,
+    channel_identifier: H256,
+    counterparty_port_identifier: Vec<u8>,
+    counterparty_channel_identifier: H256,
+}
+
+/// Opening channel.
+pub fn test_chan_open_init(
+    ordered: bool,
+    connection_hops: Vec<H256>,
+    port_identifier: Vec<u8>,
+    channel_identifier: H256,
+    counterparty_port_identifier: Vec<u8>,
+    counterparty_channel_identifier: H256,
+) -> Call<TestChanOpenInitArgs> {
+    Call::new(
+        MODULE,
+        TEST_CHAN_OPEN_INIT,
+        TestChanOpenInitArgs {
+            ordered,
+            connection_hops,
+            port_identifier,
+            channel_identifier,
+            counterparty_port_identifier,
+            counterparty_channel_identifier,
+        },
     )
 }

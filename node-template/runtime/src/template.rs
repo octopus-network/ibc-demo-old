@@ -101,6 +101,31 @@ decl_module! {
 
 			Ok(())
 		}
+
+		pub fn test_chan_open_init(
+			origin,
+			ordered: bool,
+			connection_hops: Vec<H256>,
+			port_identifier: Vec<u8>,
+			channel_identifier: H256,
+			counterparty_port_identifier: Vec<u8>,
+			counterparty_channel_identifier: H256,
+		) -> dispatch::DispatchResult {
+			let _who = ensure_signed(origin)?;
+			let order = if ordered { ibc::ChannelOrder::Ordered } else { ibc::ChannelOrder::Unordered };
+
+			<ibc::Module<T>>::chan_open_init(
+				order,
+				connection_hops,
+				port_identifier,
+				channel_identifier,
+				counterparty_port_identifier,
+				counterparty_channel_identifier,
+				vec![],
+			)?;
+
+			Ok(())
+		}
 	}
 }
 

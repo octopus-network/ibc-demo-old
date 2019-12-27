@@ -97,6 +97,47 @@ fn execute(matches: ArgMatches) {
                     .expect("Failed to release port");
             });
         }
+        ("chan-open-init", Some(matches)) => {
+            let addr = matches
+                .value_of("addr")
+                .expect("The address of chain is required; qed");
+            let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let ordered = matches.is_present("ordered");
+            let connection_identifier = matches
+                .value_of("connection-identifier")
+                .expect("The identifier of connection is required; qed");
+            let connection_identifier = hex::decode(connection_identifier).unwrap();
+            let connection_identifier = H256::from_slice(&connection_identifier);
+            let connection_hops = vec![connection_identifier];
+            let port_identifier = matches
+                .value_of("port-identifier")
+                .expect("The identifier of port is required; qed");
+            let port_identifier = port_identifier.as_bytes().to_vec();
+            let counterparty_port_identifier = matches
+                .value_of("counterparty-port-identifier")
+                .expect("The identifier of counterparty port is required; qed");
+            let counterparty_port_identifier = counterparty_port_identifier.as_bytes().to_vec();
+
+            let mut data = [0u8; 32];
+            rand::thread_rng().fill_bytes(&mut data);
+            let channel_identifier = H256::from_slice(&data);
+            rand::thread_rng().fill_bytes(&mut data);
+            let desired_counterparty_channel_identifier = H256::from_slice(&data);
+
+            tokio_compat::run_std(async move {
+                chan_open_init(
+                    addr,
+                    ordered,
+                    connection_hops,
+                    port_identifier,
+                    channel_identifier,
+                    counterparty_port_identifier,
+                    desired_counterparty_channel_identifier,
+                )
+                .await
+                .expect("Failed to open channel");
+            });
+        }
         _ => print_usage(&matches),
     }
 }
@@ -141,6 +182,17 @@ fn main() {
                 "
 <addr> 'The address of demo chain'
 <identifier> 'The identifier of port'
+",
+            )])
+        .subcommands(vec![SubCommand::with_name("chan-open-init")
+            .about("Open a new channel")
+            .args_from_usage(
+                "
+<addr> 'The address of demo chain'
+<order> 'The ordering of channel'
+<connection-identifier> 'The connection identifier of demo chain'
+<port-identifier> 'The identifier of port'
+<counterparty-port-identifier> 'The identifier of port on counterparty chain'
 ",
             )])
         .get_matches();
@@ -211,5 +263,34 @@ async fn release_port(addr: Url, identifier: Vec<u8>) -> Result<(), Box<dyn Erro
     xt.submit(template::test_release_port(identifier))
         .compat()
         .await?;
+    Ok(())
+}
+
+async fn chan_open_init(
+    addr: Url,
+    ordered: bool,
+    connection_hops: Vec<H256>,
+    port_identifier: Vec<u8>,
+    channel_identifier: H256,
+    counterparty_port_identifier: Vec<u8>,
+    counterparty_channel_identifier: H256,
+) -> Result<(), Box<dyn Error>> {
+    let signer = AccountKeyring::Alice.pair();
+    let client = ClientBuilder::<Runtime>::new()
+        .set_url(addr.clone())
+        .build()
+        .compat()
+        .await?;
+    let xt = client.xt(signer, None).compat().await?;
+    xt.submit(template::test_chan_open_init(
+        ordered,
+        connection_hops,
+        port_identifier,
+        channel_identifier,
+        counterparty_port_identifier,
+        counterparty_channel_identifier,
+    ))
+    .compat()
+    .await?;
     Ok(())
 }
