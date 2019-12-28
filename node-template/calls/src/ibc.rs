@@ -30,6 +30,13 @@ pub trait IbcStore {
         &self,
         connection_identifier: &H256,
     ) -> Box<dyn Future<Item = pallet_ibc::ConnectionEnd, Error = Error> + Send>;
+
+    fn get_channels_using_connections(
+        &self,
+        _connections: Vec<H256>,
+        port_identifier: Vec<u8>,
+        channel_identifier: H256,
+    ) -> Box<dyn Future<Item = pallet_ibc::ChannelEnd, Error = Error> + Send>;
 }
 
 impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
@@ -92,6 +99,30 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
             Err(err) => return Box::new(future::err(err)),
         };
         Box::new(self.fetch_or(map.key(connection_identifier), map.default()))
+    }
+
+    // TODO
+    fn get_channels_using_connections(
+        &self,
+        _connections: Vec<H256>,
+        port_identifier: Vec<u8>,
+        channel_identifier: H256,
+    ) -> Box<dyn Future<Item = pallet_ibc::ChannelEnd, Error = Error> + Send> {
+        let get_channels = || {
+            Ok(self
+                .metadata()
+                .module("Ibc")?
+                .storage("Channels")?
+                .get_map()?)
+        };
+        let map = match get_channels() {
+            Ok(map) => map,
+            Err(err) => return Box::new(future::err(err)),
+        };
+        Box::new(self.fetch_or(
+            map.key((port_identifier, channel_identifier)),
+            map.default(),
+        ))
     }
 }
 

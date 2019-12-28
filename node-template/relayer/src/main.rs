@@ -226,5 +226,10 @@ async fn relay(
             }
         }
     }
+    let channels = client
+        .get_channels_using_connections(vec![], vec![], client_identifier)
+        .compat()
+        .await?;
+    println!("channels: {:?}", channels);
     Ok(())
 }

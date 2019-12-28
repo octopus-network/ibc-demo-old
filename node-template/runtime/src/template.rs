@@ -112,9 +112,12 @@ decl_module! {
 			counterparty_channel_identifier: H256,
 		) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
+			let module_index = T::ModuleToIndex::module_to_index::<u8>()
+				.expect("Every active module has an index in the runtime; qed") as u8;
 			let order = if ordered { ibc::ChannelOrder::Ordered } else { ibc::ChannelOrder::Unordered };
 
 			<ibc::Module<T>>::chan_open_init(
+				module_index,
 				order,
 				connection_hops,
 				port_identifier,
