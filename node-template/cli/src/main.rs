@@ -188,8 +188,8 @@ fn main() {
             .about("Open a new channel")
             .args_from_usage(
                 "
+--ordered 'The ordering of channel'
 <addr> 'The address of demo chain'
-<order> 'The ordering of channel'
 <connection-identifier> 'The connection identifier of demo chain'
 <port-identifier> 'The identifier of port'
 <counterparty-port-identifier> 'The identifier of port on counterparty chain'

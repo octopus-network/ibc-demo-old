@@ -1,7 +1,7 @@
 //! Implements support for the pallet_ibc module.
 use codec::Encode;
 use futures::future::{self, Future};
-use sp_core::H256;
+use sp_core::{storage::StorageKey, twox_128, H256};
 use substrate_subxt::{balances::Balances, system::System, Call, Client, Error};
 
 const MODULE: &str = "Ibc";
@@ -37,6 +37,10 @@ pub trait IbcStore {
         port_identifier: Vec<u8>,
         channel_identifier: H256,
     ) -> Box<dyn Future<Item = pallet_ibc::ChannelEnd, Error = Error> + Send>;
+
+    fn get_channel_keys(
+        &self,
+    ) -> Box<dyn Future<Item = Vec<(Vec<u8>, H256)>, Error = Error> + Send>;
 }
 
 impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
@@ -123,6 +127,15 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
             map.key((port_identifier, channel_identifier)),
             map.default(),
         ))
+    }
+
+    // TODO
+    fn get_channel_keys(
+        &self,
+    ) -> Box<dyn Future<Item = Vec<(Vec<u8>, H256)>, Error = Error> + Send> {
+        let mut storage_key = twox_128(b"Ibc").to_vec();
+        storage_key.extend(twox_128(b"ChannelKeys").to_vec());
+        Box::new(self.fetch_or(StorageKey(storage_key), vec![]))
     }
 }
 

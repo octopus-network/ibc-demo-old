@@ -84,7 +84,7 @@ decl_module! {
 
 		pub fn test_bind_port(origin, identifier: Vec<u8>) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
-			let module_index = T::ModuleToIndex::module_to_index::<u8>()
+			let module_index = T::ModuleToIndex::module_to_index::<crate::TemplateModule>()
 				.expect("Every active module has an index in the runtime; qed") as u8;
 
 			<ibc::Module<T>>::bind_port(identifier, module_index)?;
@@ -94,7 +94,7 @@ decl_module! {
 
 		pub fn test_release_port(origin, identifier: Vec<u8>) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
-			let module_index = T::ModuleToIndex::module_to_index::<u8>()
+			let module_index = T::ModuleToIndex::module_to_index::<crate::TemplateModule>()
 				.expect("Every active module has an index in the runtime; qed") as u8;
 
 			<ibc::Module<T>>::release_port(identifier, module_index)?;
@@ -112,7 +112,7 @@ decl_module! {
 			counterparty_channel_identifier: H256,
 		) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
-			let module_index = T::ModuleToIndex::module_to_index::<u8>()
+			let module_index = T::ModuleToIndex::module_to_index::<crate::TemplateModule>()
 				.expect("Every active module has an index in the runtime; qed") as u8;
 			let order = if ordered { ibc::ChannelOrder::Ordered } else { ibc::ChannelOrder::Unordered };
 

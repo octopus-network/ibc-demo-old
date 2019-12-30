@@ -226,10 +226,14 @@ async fn relay(
             }
         }
     }
-    let channels = client
-        .get_channels_using_connections(vec![], vec![], client_identifier)
-        .compat()
-        .await?;
+    let channels = client.get_channel_keys().compat().await?;
     println!("channels: {:?}", channels);
+    for channel in channels.iter() {
+        let channel_end = client
+            .get_channels_using_connections(vec![], channel.0.clone(), channel.1)
+            .compat()
+            .await?;
+        println!("channel_end: {:?}", channel_end);
+    }
     Ok(())
 }
