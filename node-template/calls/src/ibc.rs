@@ -41,6 +41,11 @@ pub trait IbcStore {
     fn get_channel_keys(
         &self,
     ) -> Box<dyn Future<Item = Vec<(Vec<u8>, H256)>, Error = Error> + Send>;
+
+    fn get_channel(
+        &self,
+        identifier_tuple: (Vec<u8>, H256),
+    ) -> Box<dyn Future<Item = pallet_ibc::ChannelEnd, Error = Error> + Send>;
 }
 
 impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
@@ -136,6 +141,24 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
         let mut storage_key = twox_128(b"Ibc").to_vec();
         storage_key.extend(twox_128(b"ChannelKeys").to_vec());
         Box::new(self.fetch_or(StorageKey(storage_key), vec![]))
+    }
+
+    fn get_channel(
+        &self,
+        identifier_tuple: (Vec<u8>, H256),
+    ) -> Box<dyn Future<Item = pallet_ibc::ChannelEnd, Error = Error> + Send> {
+        let get_channels = || {
+            Ok(self
+                .metadata()
+                .module("Ibc")?
+                .storage("Channels")?
+                .get_map()?)
+        };
+        let map = match get_channels() {
+            Ok(map) => map,
+            Err(err) => return Box::new(future::err(err)),
+        };
+        Box::new(self.fetch_or(map.key(identifier_tuple), map.default()))
     }
 }
 

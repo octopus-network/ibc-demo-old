@@ -5,6 +5,7 @@ use calls::{
 use clap::{App, ArgMatches, SubCommand};
 use futures::compat::{Future01CompatExt, Stream01CompatExt};
 use futures::stream::StreamExt;
+use pallet_ibc::{ChannelState, ConnectionState, Datagram};
 use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_keyring::AccountKeyring;
 use sp_runtime::generic;
@@ -140,7 +141,7 @@ async fn relay(
     let signer = AccountKeyring::Alice.pair();
     let mut counterparty_xt = counterparty_client.xt(signer, None).compat().await?;
     if map.consensus_state.height < header_number {
-        let datagram = pallet_ibc::Datagram::ClientUpdate {
+        let datagram = Datagram::ClientUpdate {
             identifier: counterparty_client_identifier,
             header: block_header,
         };
@@ -166,10 +167,10 @@ async fn relay(
             .await?;
         println!("remote connection_end: {:?}", remote_connection_end);
         // TODO: remote_connection_end == None ??
-        if connection_end.state == pallet_ibc::ConnectionState::Init
-            && remote_connection_end.state == pallet_ibc::ConnectionState::None
+        if connection_end.state == ConnectionState::Init
+            && remote_connection_end.state == ConnectionState::None
         {
-            let datagram = pallet_ibc::Datagram::ConnOpenTry {
+            let datagram = Datagram::ConnOpenTry {
                 desired_identifier: connection_end.counterparty_connection_identifier,
                 counterparty_connection_identifier: *connection,
                 counterparty_client_identifier: client_identifier,
@@ -189,10 +190,10 @@ async fn relay(
             {
                 println!("failed to send ConnOpenTry; error = {}", e);
             }
-        } else if connection_end.state == pallet_ibc::ConnectionState::TryOpen
-            && remote_connection_end.state == pallet_ibc::ConnectionState::Init
+        } else if connection_end.state == ConnectionState::TryOpen
+            && remote_connection_end.state == ConnectionState::Init
         {
-            let datagram = pallet_ibc::Datagram::ConnOpenAck {
+            let datagram = Datagram::ConnOpenAck {
                 identifier: connection_end.counterparty_connection_identifier,
                 version: vec![],
                 proof_try: vec![],
@@ -208,10 +209,10 @@ async fn relay(
             {
                 println!("failed to send ConnOpenAck; error = {}", e);
             }
-        } else if connection_end.state == pallet_ibc::ConnectionState::Open
-            && remote_connection_end.state == pallet_ibc::ConnectionState::TryOpen
+        } else if connection_end.state == ConnectionState::Open
+            && remote_connection_end.state == ConnectionState::TryOpen
         {
-            let datagram = pallet_ibc::Datagram::ConnOpenConfirm {
+            let datagram = Datagram::ConnOpenConfirm {
                 identifier: connection_end.counterparty_connection_identifier,
                 proof_ack: vec![],
                 proof_height: 0,
@@ -234,6 +235,77 @@ async fn relay(
             .compat()
             .await?;
         println!("channel_end: {:?}", channel_end);
+        let remote_channel_end = counterparty_client
+            .get_channel((
+                channel_end.counterparty_port_identifier.clone(),
+                channel_end.counterparty_channel_identifier,
+            ))
+            .compat()
+            .await?;
+        println!("remote channel_end: {:?}", remote_channel_end);
+        if channel_end.state == ChannelState::Init && remote_channel_end.state == ChannelState::None
+        {
+            let connection_end = client
+                .get_connection(&channel_end.connection_hops[0])
+                .compat()
+                .await?;
+            let datagram = Datagram::ChanOpenTry {
+                order: channel_end.ordering,
+                // connection_hops: channel_end.connection_hops.into_iter().rev().collect(), // ??
+                connection_hops: vec![connection_end.counterparty_connection_identifier],
+                port_identifier: channel_end.counterparty_port_identifier,
+                channel_identifier: channel_end.counterparty_channel_identifier,
+                counterparty_port_identifier: channel.0.clone(),
+                counterparty_channel_identifier: channel.1,
+                version: channel_end.version.clone(),
+                counterparty_version: channel_end.version,
+                proof_init: vec![],
+                proof_height: 0,
+            };
+            if let Err(e) = counterparty_xt
+                .increment_nonce()
+                .submit(ibc::submit_datagram(datagram))
+                .compat()
+                .await
+            {
+                println!("failed to send ChanOpenTry; error = {}", e);
+            }
+        } else if channel_end.state == ChannelState::TryOpen
+            && remote_channel_end.state == ChannelState::Init
+        {
+            let datagram = Datagram::ChanOpenAck {
+                port_identifier: channel_end.counterparty_port_identifier,
+                channel_identifier: channel_end.counterparty_channel_identifier,
+                version: remote_channel_end.version,
+                proof_try: vec![],
+                proof_height: 0,
+            };
+            if let Err(e) = counterparty_xt
+                .increment_nonce()
+                .submit(ibc::submit_datagram(datagram))
+                .compat()
+                .await
+            {
+                println!("failed to send ChanOpenAck; error = {}", e);
+            }
+        } else if channel_end.state == ChannelState::Open
+            && remote_channel_end.state == ChannelState::TryOpen
+        {
+            let datagram = Datagram::ChanOpenConfirm {
+                port_identifier: channel_end.counterparty_port_identifier,
+                channel_identifier: channel_end.counterparty_channel_identifier,
+                proof_ack: vec![],
+                proof_height: 0,
+            };
+            if let Err(e) = counterparty_xt
+                .increment_nonce()
+                .submit(ibc::submit_datagram(datagram))
+                .compat()
+                .await
+            {
+                println!("failed to send ChanOpenConfirm; error = {}", e);
+            }
+        }
     }
     Ok(())
 }
