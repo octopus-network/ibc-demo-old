@@ -102,7 +102,7 @@ fn execute(matches: ArgMatches) {
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
             let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
-            let ordered = matches.is_present("ordered");
+            let unordered = matches.is_present("unordered");
             let connection_identifier = matches
                 .value_of("connection-identifier")
                 .expect("The identifier of connection is required; qed");
@@ -127,7 +127,7 @@ fn execute(matches: ArgMatches) {
             tokio_compat::run_std(async move {
                 chan_open_init(
                     addr,
-                    ordered,
+                    unordered,
                     connection_hops,
                     port_identifier,
                     channel_identifier,
@@ -136,6 +136,57 @@ fn execute(matches: ArgMatches) {
                 )
                 .await
                 .expect("Failed to open channel");
+            });
+        }
+        ("send-packet", Some(matches)) => {
+            let addr = matches
+                .value_of("addr")
+                .expect("The address of chain is required; qed");
+            let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let sequence = matches
+                .value_of("sequence")
+                .expect("The sequence of packet is required; qed");
+            let sequence: u64 = sequence.parse().unwrap();
+            let timeout_height = matches
+                .value_of("timeout-height")
+                .expect("The timeout-height of packet is required; qed");
+            let timeout_height: u32 = timeout_height.parse().unwrap();
+            let source_port = matches
+                .value_of("source-port")
+                .expect("The source-port of packet is required; qed");
+            let source_port = source_port.as_bytes().to_vec();
+            let source_channel = matches
+                .value_of("source-channel")
+                .expect("The source-channel of packet is required; qed");
+            let source_channel = hex::decode(source_channel).unwrap();
+            let source_channel = H256::from_slice(&source_channel);
+            let dest_port = matches
+                .value_of("dest-port")
+                .expect("The source-port of packet is required; qed");
+            let dest_port = dest_port.as_bytes().to_vec();
+            let dest_channel = matches
+                .value_of("dest-channel")
+                .expect("The dest-channel of packet is required; qed");
+            let dest_channel = hex::decode(dest_channel).unwrap();
+            let dest_channel = H256::from_slice(&dest_channel);
+            let data = matches
+                .value_of("data")
+                .expect("The data of packet is required; qed");
+            let data: Vec<u8> = hex::decode(data).expect("Invalid message");
+
+            tokio_compat::run_std(async move {
+                send_packet(
+                    addr,
+                    sequence,
+                    timeout_height,
+                    source_port,
+                    source_channel,
+                    dest_port,
+                    dest_channel,
+                    data,
+                )
+                .await
+                .expect("Failed to send packet");
             });
         }
         _ => print_usage(&matches),
@@ -188,11 +239,25 @@ fn main() {
             .about("Open a new channel")
             .args_from_usage(
                 "
---ordered 'The ordering of channel'
+--unordered 'Channel is unordered'
 <addr> 'The address of demo chain'
 <connection-identifier> 'The connection identifier of demo chain'
 <port-identifier> 'The identifier of port'
 <counterparty-port-identifier> 'The identifier of port on counterparty chain'
+",
+            )])
+        .subcommands(vec![SubCommand::with_name("send-packet")
+            .about("Send an IBC packet")
+            .args_from_usage(
+                "
+<addr> 'The address of demo chain'
+<sequence> 'The sequence number corresponds to the order of sends and receives'
+<timeout-height> 'The timeoutHeight indicates a consensus height on the destination chain after which the packet will no longer be processed, and will instead count as having timed-out'
+<source-port> 'The sourcePort identifies the port on the sending chain'
+<source-channel> 'The sourceChannel identifies the channel end on the sending chain'
+<dest-port> 'The destPort identifies the port on the receiving chain'
+<dest-channel> 'The destChannel identifies the channel end on the receiving chain'
+<data> 'The data is an opaque value which can be defined by the application logic of the associated modules'
 ",
             )])
         .get_matches();
@@ -268,7 +333,7 @@ async fn release_port(addr: Url, identifier: Vec<u8>) -> Result<(), Box<dyn Erro
 
 async fn chan_open_init(
     addr: Url,
-    ordered: bool,
+    unordered: bool,
     connection_hops: Vec<H256>,
     port_identifier: Vec<u8>,
     channel_identifier: H256,
@@ -283,12 +348,43 @@ async fn chan_open_init(
         .await?;
     let xt = client.xt(signer, None).compat().await?;
     xt.submit(template::test_chan_open_init(
-        ordered,
+        unordered,
         connection_hops,
         port_identifier,
         channel_identifier,
         counterparty_port_identifier,
         counterparty_channel_identifier,
+    ))
+    .compat()
+    .await?;
+    Ok(())
+}
+
+async fn send_packet(
+    addr: Url,
+    sequence: u64,
+    timeout_height: u32,
+    source_port: Vec<u8>,
+    source_channel: H256,
+    dest_port: Vec<u8>,
+    dest_channel: H256,
+    data: Vec<u8>,
+) -> Result<(), Box<dyn Error>> {
+    let signer = AccountKeyring::Alice.pair();
+    let client = ClientBuilder::<Runtime>::new()
+        .set_url(addr.clone())
+        .build()
+        .compat()
+        .await?;
+    let xt = client.xt(signer, None).compat().await?;
+    xt.submit(template::test_send_packet(
+        sequence,
+        timeout_height,
+        source_port,
+        source_channel,
+        dest_port,
+        dest_channel,
+        data,
     ))
     .compat()
     .await?;

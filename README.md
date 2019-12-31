@@ -15,5 +15,5 @@ $ ./target/release/cli conn-open-init 127.0.0.1:9944 779ca65108d1d515c3e4bc2e9f6
 $ ./target/release/cli bind-port 127.0.0.1:9944 bank
 $ ./target/release/cli bind-port 127.0.0.1:8844 bank
 $ ./target/release/cli release-port 127.0.0.1:9944 bank
-$ ./target/release/cli chan-open-init --ordered 127.0.0.1:9944 8f97a7b961a7d4f26881763cc0b8507d2974d4cdda34e232a24a9f476d006f41 bank bank
+$ ./target/release/cli chan-open-init 127.0.0.1:9944 8f97a7b961a7d4f26881763cc0b8507d2974d4cdda34e232a24a9f476d006f41 bank bank
 ```

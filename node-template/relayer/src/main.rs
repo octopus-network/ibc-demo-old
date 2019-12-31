@@ -3,15 +3,19 @@ use calls::{
     NodeRuntime as Runtime,
 };
 use clap::{App, ArgMatches, SubCommand};
+use codec::Decode;
 use futures::compat::{Future01CompatExt, Stream01CompatExt};
 use futures::stream::StreamExt;
 use pallet_ibc::{ChannelState, ConnectionState, Datagram};
 use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_keyring::AccountKeyring;
 use sp_runtime::generic;
+use sp_storage::StorageChangeSet;
 use std::error::Error;
-use substrate_subxt::{Client, ClientBuilder};
+use substrate_subxt::{system::System, Client, ClientBuilder};
 use url::Url;
+
+type EventRecords = Vec<system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
 
 fn execute(matches: ArgMatches) {
     match matches.subcommand() {
@@ -69,6 +73,7 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
         .compat()
         .await?
         .compat();
+    let mut appia_events = appia_client.subscribe_events().compat().await?.compat();
 
     let flaminia_client = ClientBuilder::<Runtime>::new()
         .set_url(flaminia_addr.clone())
@@ -81,15 +86,18 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
         .compat()
         .await?
         .compat();
+    let mut flaminia_events = flaminia_client.subscribe_events().compat().await?.compat();
 
     let appia = Blake2Hasher::hash(b"appia");
     let flaminia = Blake2Hasher::hash(b"flaminia");
 
     let appia_client_1 = appia_client.clone();
     let flaminia_client_1 = flaminia_client.clone();
+    let appia_client_2 = appia_client.clone();
+    let flaminia_client_2 = flaminia_client.clone();
     tokio::spawn(async move {
         while let Some(Ok(block_header)) = appia_block_headers.next().await {
-            if let Err(e) = relay(
+            if let Err(e) = relay_handshake(
                 block_header,
                 &appia_client,
                 flaminia,
@@ -98,14 +106,14 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
             )
             .await
             {
-                println!("failed to relay; error = {}", e);
+                println!("failed to relay_handshake; error = {}", e);
             }
         }
     });
 
     tokio::spawn(async move {
         while let Some(Ok(block_header)) = flaminia_block_headers.next().await {
-            if let Err(e) = relay(
+            if let Err(e) = relay_handshake(
                 block_header,
                 &flaminia_client_1,
                 appia,
@@ -114,13 +122,31 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
             )
             .await
             {
-                println!("failed to relay; error = {}", e);
+                println!("failed to relay_handshake; error = {}", e);
             }
         }
     });
+
+    tokio::spawn(async move {
+        while let Some(Ok(change_set)) = appia_events.next().await {
+            if let Err(e) = relay_packet(&appia_client_2, change_set).await {
+                println!("failed to relay_packet; error = {}", e);
+            }
+        }
+    });
+
+    tokio::spawn(async move {
+        while let Some(Ok(change_set)) = flaminia_events.next().await {
+            if let Err(e) = relay_packet(&flaminia_client_2, change_set).await {
+                println!("failed to relay_packet; error = {}", e);
+            }
+        }
+    });
+
     Ok(())
 }
-async fn relay(
+
+async fn relay_handshake(
     block_header: generic::Header<u32, sp_runtime::traits::BlakeTwo256>,
     client: &Client<Runtime>,
     client_identifier: H256,
@@ -307,5 +333,35 @@ async fn relay(
             }
         }
     }
+    Ok(())
+}
+
+async fn relay_packet(
+    counterparty_client: &Client<Runtime>,
+    change_set: StorageChangeSet<H256>,
+) -> Result<(), Box<dyn Error>> {
+    change_set
+        .changes
+        .iter()
+        .filter_map(|(_key, data)| data.as_ref().map(|data| Decode::decode(&mut &data.0[..])))
+        .filter_map(|result: Result<EventRecords, codec::Error>| result.ok())
+        .for_each(|events| {
+            events.into_iter().for_each(|event| match event.event {
+                node_runtime::Event::ibc(pallet_ibc::RawEvent::SendPacket(
+                    sequence,
+                    data,
+                    timeout_height,
+                )) => {
+                    let block_hash = change_set.block.clone();
+                    println!(
+                        "block_hash: {:?}, sequence: {}, data: {:?}, timeout_height: {}",
+                        block_hash, sequence, data, timeout_height,
+                    );
+                    // counterparty_client
+                }
+                node_runtime::Event::ibc(pallet_ibc::RawEvent::RecvPacket) => {}
+                _ => {}
+            });
+        });
     Ok(())
 }

@@ -104,7 +104,7 @@ decl_module! {
 
 		pub fn test_chan_open_init(
 			origin,
-			ordered: bool,
+			unordered: bool,
 			connection_hops: Vec<H256>,
 			port_identifier: Vec<u8>,
 			channel_identifier: H256,
@@ -114,7 +114,7 @@ decl_module! {
 			let _who = ensure_signed(origin)?;
 			let module_index = T::ModuleToIndex::module_to_index::<crate::TemplateModule>()
 				.expect("Every active module has an index in the runtime; qed") as u8;
-			let order = if ordered { ibc::ChannelOrder::Ordered } else { ibc::ChannelOrder::Unordered };
+			let order = if unordered { ibc::ChannelOrder::Unordered } else { ibc::ChannelOrder::Ordered };
 
 			<ibc::Module<T>>::chan_open_init(
 				module_index,
@@ -126,6 +126,31 @@ decl_module! {
 				counterparty_channel_identifier,
 				vec![],
 			)?;
+
+			Ok(())
+		}
+
+		pub fn test_send_packet(
+			origin,
+			sequence: u64,
+			timeout_height: u32,
+			source_port: Vec<u8>,
+			source_channel: H256,
+			dest_port: Vec<u8>,
+			dest_channel: H256,
+			data: Vec<u8>,
+		) -> dispatch::DispatchResult {
+			let _who = ensure_signed(origin)?;
+			let packet = ibc::Packet{
+				sequence,
+				timeout_height,
+				source_port,
+				source_channel,
+				dest_port,
+				dest_channel,
+				data,
+			};
+			<ibc::Module<T>>::send_packet(packet)?;
 
 			Ok(())
 		}

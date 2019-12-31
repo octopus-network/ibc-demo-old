@@ -15,6 +15,8 @@ calls = { path = "../calls" }
 sp-keyring = { path = "../../substrate/primitives/keyring" }
 sp-core = { path = "../../substrate/primitives/core" }
 sp-runtime = { path = "../../substrate/primitives/runtime" }
+sp-storage = { path = "../../substrate/primitives/storage" }
 system = { package = "frame-system", path = "../../substrate/frame/system" }
 node-runtime = { path = "../runtime", package = "node-template-runtime" }
 pallet-ibc = { path = "../frame/ibc" }
+codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive", "full"] }

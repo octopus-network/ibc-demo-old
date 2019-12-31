@@ -9,6 +9,7 @@ const TEST_CONN_OPEN_INIT: &str = "test_conn_open_init";
 const TEST_BIND_PORT: &str = "test_bind_port";
 const TEST_RELEASE_PORT: &str = "test_release_port";
 const TEST_CHAN_OPEN_INIT: &str = "test_chan_open_init";
+const TEST_SEND_PACKET: &str = "test_send_packet";
 
 /// The subset of the `template::Trait` that a client must implement.
 pub trait TemplateModule: System {}
@@ -85,7 +86,7 @@ pub fn test_release_port(identifier: Vec<u8>) -> Call<TestReleasePortArgs> {
 /// Arguments for opening channel.
 #[derive(Encode)]
 pub struct TestChanOpenInitArgs {
-    ordered: bool,
+    unordered: bool,
     connection_hops: Vec<H256>,
     port_identifier: Vec<u8>,
     channel_identifier: H256,
@@ -95,7 +96,7 @@ pub struct TestChanOpenInitArgs {
 
 /// Opening channel.
 pub fn test_chan_open_init(
-    ordered: bool,
+    unordered: bool,
     connection_hops: Vec<H256>,
     port_identifier: Vec<u8>,
     channel_identifier: H256,
@@ -106,12 +107,49 @@ pub fn test_chan_open_init(
         MODULE,
         TEST_CHAN_OPEN_INIT,
         TestChanOpenInitArgs {
-            ordered,
+            unordered,
             connection_hops,
             port_identifier,
             channel_identifier,
             counterparty_port_identifier,
             counterparty_channel_identifier,
+        },
+    )
+}
+
+/// Arguments for sending packet.
+#[derive(Encode)]
+pub struct TestSendPacketArgs {
+    sequence: u64,
+    timeout_height: u32,
+    source_port: Vec<u8>,
+    source_channel: H256,
+    dest_port: Vec<u8>,
+    dest_channel: H256,
+    data: Vec<u8>,
+}
+
+/// Sending packet.
+pub fn test_send_packet(
+    sequence: u64,
+    timeout_height: u32,
+    source_port: Vec<u8>,
+    source_channel: H256,
+    dest_port: Vec<u8>,
+    dest_channel: H256,
+    data: Vec<u8>,
+) -> Call<TestSendPacketArgs> {
+    Call::new(
+        MODULE,
+        TEST_SEND_PACKET,
+        TestSendPacketArgs {
+            sequence,
+            timeout_height,
+            source_port,
+            source_channel,
+            dest_port,
+            dest_channel,
+            data,
         },
     )
 }
