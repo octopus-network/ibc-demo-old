@@ -6,7 +6,8 @@ use clap::{App, ArgMatches, SubCommand};
 use codec::Decode;
 use futures::compat::{Future01CompatExt, Stream01CompatExt};
 use futures::stream::StreamExt;
-use pallet_ibc::{ChannelState, ConnectionState, Datagram};
+use log::info;
+use pallet_ibc::{ChannelState, ConnectionState, Datagram, Packet};
 use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_keyring::AccountKeyring;
 use sp_runtime::generic;
@@ -45,6 +46,7 @@ fn print_usage(matches: &ArgMatches) {
 }
 
 fn main() {
+    env_logger::init();
     let matches = App::new("relayer")
         .author("Cdot Network <ys@cdot.network>")
         .about("Relayer is an off-chain process to relay IBC packets between two demo chains")
@@ -351,15 +353,58 @@ async fn relay_packet(
                     sequence,
                     data,
                     timeout_height,
+                    source_port,
+                    source_channel,
+                    dest_port,
+                    dest_channel,
                 )) => {
                     let block_hash = change_set.block.clone();
-                    println!(
-                        "block_hash: {:?}, sequence: {}, data: {:?}, timeout_height: {}",
-                        block_hash, sequence, data, timeout_height,
+                    info!(
+                      "SendPacket => sequence: {}, data: {:?}, timeout_height: {}, source_port: {:?}, source_channel: {:?}, dest_port: {:?}, dest_channel: {:?}",
+                      sequence, data, timeout_height, source_port, source_channel, dest_port, dest_channel
                     );
-                    // counterparty_client
+                    let packet_data = Packet {
+                        sequence,
+                        timeout_height,
+                        source_port,
+                        source_channel,
+                        dest_port,
+                        dest_channel,
+                        data,
+                    };
+                    let datagram = Datagram::PacketRecv {
+                        packet: packet_data,
+                        proof: vec![],
+                        proof_height: 0,
+                    };
+                    let client = counterparty_client.clone();
+                    tokio::spawn(async move {
+                        let signer = AccountKeyring::Alice.pair();
+                        let mut counterparty_xt = client.xt(signer, None).compat().await.unwrap();
+                        if let Err(e) = counterparty_xt
+                            .increment_nonce()
+                            .submit(ibc::submit_datagram(datagram))
+                            .compat()
+                            .await
+                        {
+                            println!("failed to send PacketRecv; error = {}", e);
+                        }
+                    });
                 }
-                node_runtime::Event::ibc(pallet_ibc::RawEvent::RecvPacket) => {}
+                node_runtime::Event::ibc(pallet_ibc::RawEvent::RecvPacket(
+                    sequence,
+                    data,
+                    timeout_height,
+                    source_port,
+                    source_channel,
+                    dest_port,
+                    dest_channel,
+                    )) => {
+                  info!(
+                    "RecvPacket => sequence: {}, data: {:?}, timeout_height: {}, source_port: {:?}, source_channel: {:?}, dest_port: {:?}, dest_channel: {:?}",
+                    sequence, data, timeout_height, source_port, source_channel, dest_port, dest_channel
+                  );
+                }
                 _ => {}
             });
         });
