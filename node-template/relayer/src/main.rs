@@ -6,13 +6,14 @@ use clap::{App, ArgMatches, SubCommand};
 use codec::Decode;
 use futures::compat::{Future01CompatExt, Stream01CompatExt};
 use futures::stream::StreamExt;
-use log::info;
+use log::{debug, error, info};
 use pallet_ibc::{ChannelState, ConnectionState, Datagram, Packet};
 use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_keyring::AccountKeyring;
 use sp_runtime::generic;
 use sp_storage::StorageChangeSet;
 use std::error::Error;
+use std::sync::mpsc::{channel, Sender};
 use substrate_subxt::{system::System, Client, ClientBuilder};
 use url::Url;
 
@@ -69,78 +70,162 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
         .build()
         .compat()
         .await?;
-
-    let mut appia_block_headers = appia_client
-        .subscribe_finalized_blocks()
-        .compat()
-        .await?
-        .compat();
-    let mut appia_events = appia_client.subscribe_events().compat().await?.compat();
-
     let flaminia_client = ClientBuilder::<Runtime>::new()
         .set_url(flaminia_addr.clone())
         .build()
         .compat()
         .await?;
 
+    let mut appia_block_headers = appia_client
+        .subscribe_finalized_blocks()
+        .compat()
+        .await?
+        .compat();
     let mut flaminia_block_headers = flaminia_client
         .subscribe_finalized_blocks()
         .compat()
         .await?
         .compat();
+
+    let mut appia_events = appia_client.subscribe_events().compat().await?.compat();
     let mut flaminia_events = flaminia_client.subscribe_events().compat().await?.compat();
 
     let appia = Blake2Hasher::hash(b"appia");
     let flaminia = Blake2Hasher::hash(b"flaminia");
 
-    let appia_client_1 = appia_client.clone();
-    let flaminia_client_1 = flaminia_client.clone();
-    let appia_client_2 = appia_client.clone();
-    let flaminia_client_2 = flaminia_client.clone();
-    tokio::spawn(async move {
-        while let Some(Ok(block_header)) = appia_block_headers.next().await {
-            if let Err(e) = relay_handshake(
-                block_header,
-                &appia_client,
-                flaminia,
-                &flaminia_client,
-                appia,
-            )
-            .await
-            {
-                println!("failed to relay_handshake; error = {}", e);
-            }
-        }
-    });
+    let (tx1, rx1) = channel();
+    let (tx2, rx2) = channel();
 
-    tokio::spawn(async move {
-        while let Some(Ok(block_header)) = flaminia_block_headers.next().await {
-            if let Err(e) = relay_handshake(
-                block_header,
-                &flaminia_client_1,
-                appia,
-                &appia_client_1,
-                flaminia,
-            )
-            .await
-            {
-                println!("failed to relay_handshake; error = {}", e);
+    let tx = tx1.clone();
+    {
+        let appia_client = appia_client.clone();
+        let flaminia_client = flaminia_client.clone();
+        tokio::spawn(async move {
+            while let Some(Ok(block_header)) = appia_block_headers.next().await {
+                let tx = tx.clone();
+                if let Err(e) = relay_handshake(
+                    "appia",
+                    tx,
+                    block_header,
+                    &appia_client,
+                    flaminia,
+                    &flaminia_client,
+                    appia,
+                )
+                .await
+                {
+                    error!("[appia] failed to relay_handshake; error = {}", e);
+                }
             }
-        }
-    });
+        });
+    }
 
+    let tx = tx2.clone();
+    {
+        let appia_client = appia_client.clone();
+        let flaminia_client = flaminia_client.clone();
+        tokio::spawn(async move {
+            while let Some(Ok(block_header)) = flaminia_block_headers.next().await {
+                let tx = tx.clone();
+                if let Err(e) = relay_handshake(
+                    "flaminia",
+                    tx,
+                    block_header,
+                    &flaminia_client,
+                    appia,
+                    &appia_client,
+                    flaminia,
+                )
+                .await
+                {
+                    error!("[flaminia] failed to relay_handshake; error = {}", e);
+                }
+            }
+        });
+    }
+
+    let tx = tx1.clone();
     tokio::spawn(async move {
         while let Some(Ok(change_set)) = appia_events.next().await {
-            if let Err(e) = relay_packet(&appia_client_2, change_set).await {
-                println!("failed to relay_packet; error = {}", e);
+            let tx = tx.clone();
+            if let Err(e) = relay_packet("appia", tx, change_set).await {
+                error!("[appia] failed to relay_packet; error = {}", e);
+            }
+        }
+    });
+
+    let tx = tx2.clone();
+    tokio::spawn(async move {
+        while let Some(Ok(change_set)) = flaminia_events.next().await {
+            let tx = tx.clone();
+            if let Err(e) = relay_packet("flaminia", tx, change_set).await {
+                error!("[flaminia] failed to relay_packet; error = {}", e);
             }
         }
     });
 
     tokio::spawn(async move {
-        while let Some(Ok(change_set)) = flaminia_events.next().await {
-            if let Err(e) = relay_packet(&flaminia_client_2, change_set).await {
-                println!("failed to relay_packet; error = {}", e);
+        let signer = AccountKeyring::Alice.pair();
+        let mut xt = flaminia_client.xt(signer, None).compat().await.unwrap();
+        let mut first = true;
+        loop {
+            let datagram = rx1.recv().unwrap();
+            match datagram {
+                Datagram::ClientUpdate { .. } => {
+                    info!("[relayer => flaminia] datagram: {:?}", datagram)
+                }
+                _ => info!("[relayer => flaminia] datagram: {:#?}", datagram),
+            }
+            if first {
+                if let Err(e) = xt.submit(ibc::submit_datagram(datagram)).compat().await {
+                    error!(
+                        "[relayer => flaminia] failed to send datagram; error = {}",
+                        e
+                    );
+                }
+                first = false;
+                continue;
+            }
+            if let Err(e) = xt
+                .increment_nonce()
+                .submit(ibc::submit_datagram(datagram))
+                .compat()
+                .await
+            {
+                error!(
+                    "[relayer => flaminia] failed to send datagram; error = {}",
+                    e
+                );
+            }
+        }
+    });
+
+    tokio::spawn(async move {
+        let signer = AccountKeyring::Alice.pair();
+        let mut xt = appia_client.xt(signer, None).compat().await.unwrap();
+        let mut first = true;
+        loop {
+            let datagram = rx2.recv().unwrap();
+            match datagram {
+                Datagram::ClientUpdate { .. } => {
+                    info!("[relayer => appia] datagram: {:?}", datagram)
+                }
+                _ => info!("[relayer => appia] datagram: {:#?}", datagram),
+            }
+            if first {
+                if let Err(e) = xt.submit(ibc::submit_datagram(datagram)).compat().await {
+                    error!("[relayer => appia] failed to send datagram; error = {}", e);
+                }
+                first = false;
+                continue;
+            }
+            if let Err(e) = xt
+                .increment_nonce()
+                .submit(ibc::submit_datagram(datagram))
+                .compat()
+                .await
+            {
+                error!("[relayer => appia] failed to send datagram; error = {}", e);
             }
         }
     });
@@ -149,6 +234,8 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
 }
 
 async fn relay_handshake(
+    chain_name: &str,
+    tx: Sender<Datagram>,
     block_header: generic::Header<u32, sp_runtime::traits::BlakeTwo256>,
     client: &Client<Runtime>,
     client_identifier: H256,
@@ -158,42 +245,41 @@ async fn relay_handshake(
     let header_number = block_header.number;
     let state_root = block_header.state_root;
     let block_hash = block_header.hash();
-    println!("header_number: {:?}", header_number);
-    println!("state_root: {:?}", state_root);
-    println!("block_hash: {:?}", block_hash);
+    info!("[{}] header_number: {:?}", chain_name, header_number);
+    info!("[{}] state_root: {:?}", chain_name, state_root);
+    info!("[{}] block_hash: {:?}", chain_name, block_hash);
     let map = counterparty_client
         .query_client_consensus_state(&counterparty_client_identifier)
         .compat()
         .await?;
-    println!("query client on counterparty chain: {:?}", map);
-    let signer = AccountKeyring::Alice.pair();
-    let mut counterparty_xt = counterparty_client.xt(signer, None).compat().await?;
+    debug!("[{}] query counterparty client: {:#?}", chain_name, map);
     if map.consensus_state.height < header_number {
         let datagram = Datagram::ClientUpdate {
             identifier: counterparty_client_identifier,
             header: block_header,
         };
-        if let Err(e) = counterparty_xt
-            .submit(ibc::submit_datagram(datagram))
-            .compat()
-            .await
-        {
-            println!("failed to update_client; error = {}", e);
-        }
+        tx.send(datagram).unwrap();
     }
     let connections = client
         .get_connections_using_client(&client_identifier)
         .compat()
         .await?;
-    println!("connections: {:?}", connections);
+    info!("[{}] connections: {:?}", chain_name, connections);
     for connection in connections.iter() {
         let connection_end = client.get_connection(&connection).compat().await?;
-        println!("connection_end: {:?}", connection_end);
+        debug!("[{}] connection_end: {:#?}", chain_name, connection_end);
         let remote_connection_end = counterparty_client
             .get_connection(&connection_end.counterparty_connection_identifier)
             .compat()
             .await?;
-        println!("remote connection_end: {:?}", remote_connection_end);
+        debug!(
+            "[{}] remote_connection_end: {:#?}",
+            chain_name, remote_connection_end
+        );
+        info!(
+            "[{}] connection state: {:?}, remote connection state: {:?}",
+            chain_name, connection_end.state, remote_connection_end.state
+        );
         // TODO: remote_connection_end == None ??
         if connection_end.state == ConnectionState::Init
             && remote_connection_end.state == ConnectionState::None
@@ -210,14 +296,7 @@ async fn relay_handshake(
                 proof_height: header_number,
                 consensus_height: 0, // TODO: local consensus state height
             };
-            if let Err(e) = counterparty_xt
-                .increment_nonce()
-                .submit(ibc::submit_datagram(datagram))
-                .compat()
-                .await
-            {
-                println!("failed to send ConnOpenTry; error = {}", e);
-            }
+            tx.send(datagram).unwrap();
         } else if connection_end.state == ConnectionState::TryOpen
             && remote_connection_end.state == ConnectionState::Init
         {
@@ -229,14 +308,7 @@ async fn relay_handshake(
                 proof_height: 0,
                 consensus_height: 0,
             };
-            if let Err(e) = counterparty_xt
-                .increment_nonce()
-                .submit(ibc::submit_datagram(datagram))
-                .compat()
-                .await
-            {
-                println!("failed to send ConnOpenAck; error = {}", e);
-            }
+            tx.send(datagram).unwrap();
         } else if connection_end.state == ConnectionState::Open
             && remote_connection_end.state == ConnectionState::TryOpen
         {
@@ -245,24 +317,17 @@ async fn relay_handshake(
                 proof_ack: vec![],
                 proof_height: 0,
             };
-            if let Err(e) = counterparty_xt
-                .increment_nonce()
-                .submit(ibc::submit_datagram(datagram))
-                .compat()
-                .await
-            {
-                println!("failed to send ConnOpenConfirm; error = {}", e);
-            }
+            tx.send(datagram).unwrap();
         }
     }
     let channels = client.get_channel_keys().compat().await?;
-    println!("channels: {:?}", channels);
+    info!("[{}] channels: {:?}", chain_name, channels);
     for channel in channels.iter() {
         let channel_end = client
             .get_channels_using_connections(vec![], channel.0.clone(), channel.1)
             .compat()
             .await?;
-        println!("channel_end: {:?}", channel_end);
+        debug!("[{}] channel_end: {:#?}", chain_name, channel_end);
         let remote_channel_end = counterparty_client
             .get_channel((
                 channel_end.counterparty_port_identifier.clone(),
@@ -270,7 +335,14 @@ async fn relay_handshake(
             ))
             .compat()
             .await?;
-        println!("remote channel_end: {:?}", remote_channel_end);
+        debug!(
+            "[{}] remote_channel_end: {:#?}",
+            chain_name, remote_channel_end
+        );
+        info!(
+            "[{}] channle state: {:?}, remote channel state: {:?}",
+            chain_name, channel_end.state, remote_channel_end.state
+        );
         if channel_end.state == ChannelState::Init && remote_channel_end.state == ChannelState::None
         {
             let connection_end = client
@@ -290,14 +362,7 @@ async fn relay_handshake(
                 proof_init: vec![],
                 proof_height: 0,
             };
-            if let Err(e) = counterparty_xt
-                .increment_nonce()
-                .submit(ibc::submit_datagram(datagram))
-                .compat()
-                .await
-            {
-                println!("failed to send ChanOpenTry; error = {}", e);
-            }
+            tx.send(datagram).unwrap();
         } else if channel_end.state == ChannelState::TryOpen
             && remote_channel_end.state == ChannelState::Init
         {
@@ -308,14 +373,7 @@ async fn relay_handshake(
                 proof_try: vec![],
                 proof_height: 0,
             };
-            if let Err(e) = counterparty_xt
-                .increment_nonce()
-                .submit(ibc::submit_datagram(datagram))
-                .compat()
-                .await
-            {
-                println!("failed to send ChanOpenAck; error = {}", e);
-            }
+            tx.send(datagram).unwrap();
         } else if channel_end.state == ChannelState::Open
             && remote_channel_end.state == ChannelState::TryOpen
         {
@@ -325,21 +383,15 @@ async fn relay_handshake(
                 proof_ack: vec![],
                 proof_height: 0,
             };
-            if let Err(e) = counterparty_xt
-                .increment_nonce()
-                .submit(ibc::submit_datagram(datagram))
-                .compat()
-                .await
-            {
-                println!("failed to send ChanOpenConfirm; error = {}", e);
-            }
+            tx.send(datagram).unwrap();
         }
     }
     Ok(())
 }
 
 async fn relay_packet(
-    counterparty_client: &Client<Runtime>,
+    chain_name: &str,
+    tx: Sender<Datagram>,
     change_set: StorageChangeSet<H256>,
 ) -> Result<(), Box<dyn Error>> {
     change_set
@@ -360,8 +412,8 @@ async fn relay_packet(
                 )) => {
                     let block_hash = change_set.block.clone();
                     info!(
-                      "SendPacket => sequence: {}, data: {:?}, timeout_height: {}, source_port: {:?}, source_channel: {:?}, dest_port: {:?}, dest_channel: {:?}",
-                      sequence, data, timeout_height, source_port, source_channel, dest_port, dest_channel
+                      "[{}] SendPacket hash: {:?}, sequence: {}, data: {:?}, timeout_height: {}, source_port: {:?}, source_channel: {:?}, dest_port: {:?}, dest_channel: {:?}",
+                      chain_name, block_hash, sequence, data, timeout_height, source_port, source_channel, dest_port, dest_channel
                     );
                     let packet_data = Packet {
                         sequence,
@@ -377,19 +429,7 @@ async fn relay_packet(
                         proof: vec![],
                         proof_height: 0,
                     };
-                    let client = counterparty_client.clone();
-                    tokio::spawn(async move {
-                        let signer = AccountKeyring::Alice.pair();
-                        let mut counterparty_xt = client.xt(signer, None).compat().await.unwrap();
-                        if let Err(e) = counterparty_xt
-                            .increment_nonce()
-                            .submit(ibc::submit_datagram(datagram))
-                            .compat()
-                            .await
-                        {
-                            println!("failed to send PacketRecv; error = {}", e);
-                        }
-                    });
+                    tx.send(datagram).unwrap();
                 }
                 node_runtime::Event::ibc(pallet_ibc::RawEvent::RecvPacket(
                     sequence,
@@ -401,8 +441,8 @@ async fn relay_packet(
                     dest_channel,
                     )) => {
                   info!(
-                    "RecvPacket => sequence: {}, data: {:?}, timeout_height: {}, source_port: {:?}, source_channel: {:?}, dest_port: {:?}, dest_channel: {:?}",
-                    sequence, data, timeout_height, source_port, source_channel, dest_port, dest_channel
+                    "[{}] RecvPacket sequence: {}, data: {:?}, timeout_height: {}, source_port: {:?}, source_channel: {:?}, dest_port: {:?}, dest_channel: {:?}",
+                    chain_name, sequence, data, timeout_height, source_port, source_channel, dest_port, dest_channel
                   );
                 }
                 _ => {}

@@ -1,6 +1,7 @@
 # ibc-demo
 
 ```
+$ export RUST_LOG=info
 $ cd node-template
 $ cargo build --release
 $ cargo build --release -p relayer

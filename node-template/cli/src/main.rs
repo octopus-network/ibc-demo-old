@@ -162,7 +162,7 @@ fn execute(matches: ArgMatches) {
             let source_channel = H256::from_slice(&source_channel);
             let dest_port = matches
                 .value_of("dest-port")
-                .expect("The source-port of packet is required; qed");
+                .expect("The dest-port of packet is required; qed");
             let dest_port = dest_port.as_bytes().to_vec();
             let dest_channel = matches
                 .value_of("dest-channel")
@@ -265,7 +265,7 @@ fn main() {
 }
 
 async fn create_client(addr: Url, identifier: H256) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Alice.pair();
+    let signer = AccountKeyring::Bob.pair();
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
@@ -285,7 +285,7 @@ async fn conn_open_init(
     client_identifier: H256,
     counterparty_client_identifier: H256,
 ) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Alice.pair();
+    let signer = AccountKeyring::Bob.pair();
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
@@ -304,7 +304,7 @@ async fn conn_open_init(
 }
 
 async fn bind_port(addr: Url, identifier: Vec<u8>) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Alice.pair();
+    let signer = AccountKeyring::Bob.pair();
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
@@ -318,7 +318,7 @@ async fn bind_port(addr: Url, identifier: Vec<u8>) -> Result<(), Box<dyn Error>>
 }
 
 async fn release_port(addr: Url, identifier: Vec<u8>) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Alice.pair();
+    let signer = AccountKeyring::Bob.pair();
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
@@ -340,7 +340,7 @@ async fn chan_open_init(
     counterparty_port_identifier: Vec<u8>,
     counterparty_channel_identifier: H256,
 ) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Alice.pair();
+    let signer = AccountKeyring::Bob.pair();
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
@@ -370,7 +370,7 @@ async fn send_packet(
     dest_channel: H256,
     data: Vec<u8>,
 ) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Alice.pair();
+    let signer = AccountKeyring::Bob.pair();
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
