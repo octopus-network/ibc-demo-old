@@ -439,11 +439,28 @@ async fn relay_packet(
                     source_channel,
                     dest_port,
                     dest_channel,
-                    )) => {
-                  info!(
-                    "[{}] RecvPacket sequence: {}, data: {:?}, timeout_height: {}, source_port: {:?}, source_channel: {:?}, dest_port: {:?}, dest_channel: {:?}",
-                    chain_name, sequence, data, timeout_height, source_port, source_channel, dest_port, dest_channel
-                  );
+                )) => {
+                    info!(
+                      "[{}] RecvPacket sequence: {}, data: {:?}, timeout_height: {}, source_port: {:?}, source_channel: {:?}, dest_port: {:?}, dest_channel: {:?}",
+                      chain_name, sequence, data, timeout_height, source_port, source_channel, dest_port, dest_channel
+                    );
+                    // relay packet acknowledgement with this sequence number
+                    let packet_data = Packet {
+                        sequence,
+                        timeout_height,
+                        source_port,
+                        source_channel,
+                        dest_port,
+                        dest_channel,
+                        data,
+                    };
+                    let datagram = Datagram::PacketAcknowledgement {
+                        packet: packet_data,
+                        proof: vec![],
+                        proof_height: 0,
+
+                    };
+                    tx.send(datagram).unwrap();
                 }
                 _ => {}
             });
