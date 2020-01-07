@@ -456,9 +456,9 @@ async fn relay_packet(
                     };
                     let datagram = Datagram::PacketAcknowledgement {
                         packet: packet_data,
+                        acknowledgement: vec![],
                         proof: vec![],
                         proof_height: 0,
-
                     };
                     tx.send(datagram).unwrap();
                 }
