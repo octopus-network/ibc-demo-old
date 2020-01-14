@@ -8,10 +8,10 @@
 /// For more guidance on Substrate modules, see the example module
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 
-use sp_std::prelude::*;
-use frame_support::{decl_module, decl_storage, decl_event, dispatch, traits::ModuleToIndex};
-use system::ensure_signed;
+use frame_support::{decl_event, decl_module, decl_storage, dispatch, traits::ModuleToIndex};
 use sp_core::H256;
+use sp_std::prelude::*;
+use system::ensure_signed;
 
 /// The module's configuration trait.
 pub trait Trait: system::Trait + ibc::Trait {
