@@ -66,7 +66,7 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
             Ok(map) => map,
             Err(err) => return Box::new(future::err(err)),
         };
-        Box::new(self.fetch_or(map.key(client_identifier), map.default()))
+        Box::new(self.fetch_or(map.key(client_identifier), None, map.default()))
     }
 
     // TODO
@@ -86,7 +86,7 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
             Err(err) => return Box::new(future::err(err)),
         };
         Box::new(
-            self.fetch_or(map.key(client_identifier), map.default())
+            self.fetch_or(map.key(client_identifier), None, map.default())
                 .map(|client: pallet_ibc::Client| client.connections),
         )
     }
@@ -107,7 +107,7 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
             Ok(map) => map,
             Err(err) => return Box::new(future::err(err)),
         };
-        Box::new(self.fetch_or(map.key(connection_identifier), map.default()))
+        Box::new(self.fetch_or(map.key(connection_identifier), None, map.default()))
     }
 
     // TODO
@@ -130,6 +130,7 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
         };
         Box::new(self.fetch_or(
             map.key((port_identifier, channel_identifier)),
+            None,
             map.default(),
         ))
     }
@@ -140,7 +141,7 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
     ) -> Box<dyn Future<Item = Vec<(Vec<u8>, H256)>, Error = Error> + Send> {
         let mut storage_key = twox_128(b"Ibc").to_vec();
         storage_key.extend(twox_128(b"ChannelKeys").to_vec());
-        Box::new(self.fetch_or(StorageKey(storage_key), vec![]))
+        Box::new(self.fetch_or(StorageKey(storage_key), None, vec![]))
     }
 
     fn get_channel(
@@ -158,7 +159,7 @@ impl<T: Ibc, S: 'static> IbcStore for Client<T, S> {
             Ok(map) => map,
             Err(err) => return Box::new(future::err(err)),
         };
-        Box::new(self.fetch_or(map.key(identifier_tuple), map.default()))
+        Box::new(self.fetch_or(map.key(identifier_tuple), None, map.default()))
     }
 }
 

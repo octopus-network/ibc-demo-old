@@ -1,3 +1,4 @@
+use sp_runtime::OpaqueExtrinsic;
 use substrate_subxt::{balances::Balances, contracts::Contracts, system::System};
 
 pub mod ibc;
@@ -17,6 +18,7 @@ impl System for NodeRuntime {
         <node_runtime::Runtime as pallet_indices::Trait>::AccountIndex,
     >;
     type Header = <node_runtime::Runtime as frame_system::Trait>::Header;
+    type Extrinsic = OpaqueExtrinsic;
 }
 
 impl Balances for NodeRuntime {

@@ -10,6 +10,7 @@ codec = { package = "parity-scale-codec", version = "1.0.0", default-features = 
 substrate-subxt = { path = "../../substrate-subxt" }
 node-runtime = { path = "../../node-template/runtime", package = "node-template-runtime" }
 sp-core = { path = "../../substrate/primitives/core" }
+sp-runtime = { path = "../../substrate/primitives/runtime" }
 frame-system = { path = "../../substrate/frame/system" }
 pallet-balances = { path = "../../substrate/frame/balances" }
 pallet-indices = { path = "../../substrate/frame/indices" }

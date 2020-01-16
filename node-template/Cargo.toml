@@ -17,18 +17,17 @@ members = ['calls', 'cli', 'relayer', 'runtime']
 
 [dependencies]
 futures = "0.3.1"
-futures01 = { package = "futures", version = "0.1.29" }
 ctrlc = { version = "3.1.3", features = ["termination"] }
 log = "0.4.8"
-tokio = "0.1.22"
+tokio = { version = "0.2", features = ["rt-threaded"] }
 parking_lot = "0.9.0"
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 trie-root = "0.15.2"
 sp-io = { version = "2.0.0", path = "../substrate/primitives/io" }
-sc-cli = { version = "2.0.0", path = "../substrate/client/cli" }
+sc-cli = { version = "0.8.0", path = "../substrate/client/cli" }
 sp-core = { version = "2.0.0", path = "../substrate/primitives/core" }
-sc-executor = { version = "2.0.0", path = "../substrate/client/executor" }
-sc-service = { version = "2.0.0", path = "../substrate/client/service" }
+sc-executor = { version = "0.8", path = "../substrate/client/executor" }
+sc-service = { version = "0.8", path = "../substrate/client/service" }
 sp-inherents = { version = "2.0.0", path = "../substrate/primitives/inherents" }
 sc-transaction-pool = { version = "2.0.0", path = "../substrate/client/transaction-pool" }
 sp-transaction-pool = { version = "2.0.0", path = "../substrate/primitives/transaction-pool" }
@@ -36,9 +35,9 @@ sc-network = { version = "0.8", path = "../substrate/client/network" }
 sc-consensus-aura = { version = "0.8", path = "../substrate/client/consensus/aura" }
 sp-consensus-aura = { version = "0.8", path = "../substrate/primitives/consensus/aura" }
 sp-consensus = { version = "0.8", path = "../substrate/primitives/consensus/common" }
-grandpa = { version = "2.0.0", package = "sc-finality-grandpa", path = "../substrate/client/finality-grandpa" }
+grandpa = { version = "0.8", package = "sc-finality-grandpa", path = "../substrate/client/finality-grandpa" }
 grandpa-primitives = { version = "2.0.0", package = "sp-finality-grandpa", path = "../substrate/primitives/finality-grandpa" }
-sc-client = { version = "2.0.0", path = "../substrate/client/" }
+sc-client = { version = "0.8", path = "../substrate/client/" }
 node-template-runtime = { version = "2.0.0", path = "runtime" }
 sp-runtime = { version = "2.0.0", path = "../substrate/primitives/runtime" }
 sc-basic-authority = { path  = "../substrate/client/basic-authorship" }
