@@ -8,8 +8,9 @@ use futures::compat::{Future01CompatExt, Stream01CompatExt};
 use futures::stream::StreamExt;
 use log::{debug, error, info};
 use pallet_ibc::{ChannelState, ConnectionState, Datagram, Packet};
-use sp_core::{Blake2Hasher, Hasher, H256};
+use sp_core::{storage::StorageKey, twox_128, Blake2Hasher, Hasher, H256};
 use sp_keyring::AccountKeyring;
+use sp_rpc::number::NumberOrHex;
 use sp_runtime::generic;
 use sp_storage::StorageChangeSet;
 use std::error::Error;
@@ -242,6 +243,9 @@ async fn relay_handshake(
     counterparty_client: &Client<Runtime>,
     counterparty_client_identifier: H256,
 ) -> Result<(), Box<dyn Error>> {
+    let mut storage_key = twox_128(b"System").to_vec();
+    storage_key.extend(twox_128(b"Events").to_vec());
+    let events_storage_key = StorageKey(storage_key);
     let header_number = block_header.number;
     let state_root = block_header.state_root;
     let block_hash = block_header.hash();
@@ -254,6 +258,20 @@ async fn relay_handshake(
         .await?;
     debug!("[{}] query counterparty client: {:#?}", chain_name, map);
     if map.consensus_state.height < header_number {
+        for height in map.consensus_state.height + 1..header_number {
+            let hash = client
+                .block_hash(Some(NumberOrHex::Number(height)))
+                .compat()
+                .await?;
+            let header = client.header(hash).compat().await?;
+            if let Some(header) = header {
+                let datagram = Datagram::ClientUpdate {
+                    identifier: counterparty_client_identifier,
+                    header: header,
+                };
+                tx.send(datagram).unwrap();
+            }
+        }
         let datagram = Datagram::ClientUpdate {
             identifier: counterparty_client_identifier,
             header: block_header,
@@ -386,6 +404,7 @@ async fn relay_handshake(
             tx.send(datagram).unwrap();
         }
     }
+
     Ok(())
 }
 
