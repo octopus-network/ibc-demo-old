@@ -88,23 +88,19 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
         .await?
         .compat();
 
-    let mut appia_events = appia_client.subscribe_events().compat().await?.compat();
-    let mut flaminia_events = flaminia_client.subscribe_events().compat().await?.compat();
-
     let appia = Blake2Hasher::hash(b"appia");
     let flaminia = Blake2Hasher::hash(b"flaminia");
 
     let (tx1, rx1) = channel();
     let (tx2, rx2) = channel();
 
-    let tx = tx1.clone();
     {
         let appia_client = appia_client.clone();
         let flaminia_client = flaminia_client.clone();
         tokio::spawn(async move {
             while let Some(Ok(block_header)) = appia_block_headers.next().await {
-                let tx = tx.clone();
-                if let Err(e) = relay_handshake(
+                let tx = tx1.clone();
+                if let Err(e) = relay(
                     "appia",
                     tx,
                     block_header,
@@ -115,20 +111,19 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
                 )
                 .await
                 {
-                    error!("[appia] failed to relay_handshake; error = {}", e);
+                    error!("[appia] failed to relay; error = {}", e);
                 }
             }
         });
     }
 
-    let tx = tx2.clone();
     {
         let appia_client = appia_client.clone();
         let flaminia_client = flaminia_client.clone();
         tokio::spawn(async move {
             while let Some(Ok(block_header)) = flaminia_block_headers.next().await {
-                let tx = tx.clone();
-                if let Err(e) = relay_handshake(
+                let tx = tx2.clone();
+                if let Err(e) = relay(
                     "flaminia",
                     tx,
                     block_header,
@@ -139,31 +134,11 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
                 )
                 .await
                 {
-                    error!("[flaminia] failed to relay_handshake; error = {}", e);
+                    error!("[flaminia] failed to relay; error = {}", e);
                 }
             }
         });
     }
-
-    let tx = tx1.clone();
-    tokio::spawn(async move {
-        while let Some(Ok(change_set)) = appia_events.next().await {
-            let tx = tx.clone();
-            if let Err(e) = relay_packet("appia", tx, change_set).await {
-                error!("[appia] failed to relay_packet; error = {}", e);
-            }
-        }
-    });
-
-    let tx = tx2.clone();
-    tokio::spawn(async move {
-        while let Some(Ok(change_set)) = flaminia_events.next().await {
-            let tx = tx.clone();
-            if let Err(e) = relay_packet("flaminia", tx, change_set).await {
-                error!("[flaminia] failed to relay_packet; error = {}", e);
-            }
-        }
-    });
 
     tokio::spawn(async move {
         let signer = AccountKeyring::Alice.pair();
@@ -234,7 +209,7 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
-async fn relay_handshake(
+async fn relay(
     chain_name: &str,
     tx: Sender<Datagram>,
     block_header: generic::Header<u32, sp_runtime::traits::BlakeTwo256>,
@@ -246,6 +221,7 @@ async fn relay_handshake(
     let mut storage_key = twox_128(b"System").to_vec();
     storage_key.extend(twox_128(b"Events").to_vec());
     let events_storage_key = StorageKey(storage_key);
+
     let header_number = block_header.number;
     let state_root = block_header.state_root;
     let block_hash = block_header.hash();
@@ -405,84 +381,104 @@ async fn relay_handshake(
         }
     }
 
-    Ok(())
-}
-
-async fn relay_packet(
-    chain_name: &str,
-    tx: Sender<Datagram>,
-    change_set: StorageChangeSet<H256>,
-) -> Result<(), Box<dyn Error>> {
-    change_set
-        .changes
-        .iter()
-        .filter_map(|(_key, data)| data.as_ref().map(|data| Decode::decode(&mut &data.0[..])))
-        .filter_map(|result: Result<EventRecords, codec::Error>| result.ok())
-        .for_each(|events| {
-            events.into_iter().for_each(|event| match event.event {
-                node_runtime::Event::ibc(pallet_ibc::RawEvent::SendPacket(
-                    sequence,
-                    data,
-                    timeout_height,
-                    source_port,
-                    source_channel,
-                    dest_port,
-                    dest_channel,
-                )) => {
-                    let block_hash = change_set.block.clone();
-                    info!(
-                      "[{}] SendPacket hash: {:?}, sequence: {}, data: {:?}, timeout_height: {}, source_port: {:?}, source_channel: {:?}, dest_port: {:?}, dest_channel: {:?}",
-                      chain_name, block_hash, sequence, data, timeout_height, source_port, source_channel, dest_port, dest_channel
-                    );
-                    let packet_data = Packet {
+    let change_sets: Vec<StorageChangeSet<H256>> = client
+        .query_storage(vec![events_storage_key], block_hash, None)
+        .compat()
+        .await?;
+    info!("length of change_sets: {:?}", change_sets.len());
+    info!("change_sets: {:?}", change_sets);
+    change_sets.iter().for_each(|change_set| {
+        change_set
+            .changes
+            .iter()
+            .filter_map(|(_key, data)| data.as_ref().map(|data| Decode::decode(&mut &data.0[..])))
+            .filter_map(|result: Result<EventRecords, codec::Error>| result.ok())
+            .for_each(|events| {
+                events.into_iter().for_each(|event| match event.event {
+                    node_runtime::Event::ibc(pallet_ibc::RawEvent::SendPacket(
                         sequence,
+                        data,
                         timeout_height,
                         source_port,
                         source_channel,
                         dest_port,
                         dest_channel,
-                        data,
-                    };
-                    let datagram = Datagram::PacketRecv {
-                        packet: packet_data,
-                        proof: vec![],
-                        proof_height: 0,
-                    };
-                    tx.send(datagram).unwrap();
-                }
-                node_runtime::Event::ibc(pallet_ibc::RawEvent::RecvPacket(
-                    sequence,
-                    data,
-                    timeout_height,
-                    source_port,
-                    source_channel,
-                    dest_port,
-                    dest_channel,
-                )) => {
-                    info!(
-                      "[{}] RecvPacket sequence: {}, data: {:?}, timeout_height: {}, source_port: {:?}, source_channel: {:?}, dest_port: {:?}, dest_channel: {:?}",
-                      chain_name, sequence, data, timeout_height, source_port, source_channel, dest_port, dest_channel
-                    );
-                    // relay packet acknowledgement with this sequence number
-                    let packet_data = Packet {
+                    )) => {
+                        let block_hash = change_set.block.clone();
+                        info!(
+                            "[{}] SendPacket hash: {:?}, sequence: {}, data: {:?}, \
+                             timeout_height: {}, source_port: {:?}, source_channel: {:?}, \
+                             dest_port: {:?}, dest_channel: {:?}",
+                            chain_name,
+                            block_hash,
+                            sequence,
+                            data,
+                            timeout_height,
+                            source_port,
+                            source_channel,
+                            dest_port,
+                            dest_channel
+                        );
+                        let packet_data = Packet {
+                            sequence,
+                            timeout_height,
+                            source_port,
+                            source_channel,
+                            dest_port,
+                            dest_channel,
+                            data,
+                        };
+                        let datagram = Datagram::PacketRecv {
+                            packet: packet_data,
+                            proof: vec![],
+                            proof_height: 0,
+                        };
+                        tx.send(datagram).unwrap();
+                    }
+                    node_runtime::Event::ibc(pallet_ibc::RawEvent::RecvPacket(
                         sequence,
+                        data,
                         timeout_height,
                         source_port,
                         source_channel,
                         dest_port,
                         dest_channel,
-                        data,
-                    };
-                    let datagram = Datagram::PacketAcknowledgement {
-                        packet: packet_data,
-                        acknowledgement: vec![],
-                        proof: vec![],
-                        proof_height: 0,
-                    };
-                    tx.send(datagram).unwrap();
-                }
-                _ => {}
+                    )) => {
+                        info!(
+                            "[{}] RecvPacket sequence: {}, data: {:?}, timeout_height: {}, \
+                             source_port: {:?}, source_channel: {:?}, dest_port: {:?}, \
+                             dest_channel: {:?}",
+                            chain_name,
+                            sequence,
+                            data,
+                            timeout_height,
+                            source_port,
+                            source_channel,
+                            dest_port,
+                            dest_channel
+                        );
+                        // relay packet acknowledgement with this sequence number
+                        let packet_data = Packet {
+                            sequence,
+                            timeout_height,
+                            source_port,
+                            source_channel,
+                            dest_port,
+                            dest_channel,
+                            data,
+                        };
+                        let datagram = Datagram::PacketAcknowledgement {
+                            packet: packet_data,
+                            acknowledgement: vec![],
+                            proof: vec![],
+                            proof_height: 0,
+                        };
+                        tx.send(datagram).unwrap();
+                    }
+                    _ => {}
+                });
             });
-        });
+    });
+
     Ok(())
 }
