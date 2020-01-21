@@ -1,12 +1,10 @@
 use calls::{template, NodeRuntime as Runtime};
 use clap::{App, ArgMatches, SubCommand};
-use futures::compat::Future01CompatExt;
 use rand::RngCore;
 use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_keyring::AccountKeyring;
 use std::error::Error;
 use substrate_subxt::ClientBuilder;
-use url::Url;
 
 fn execute(matches: ArgMatches) {
     match matches.subcommand() {
@@ -14,24 +12,21 @@ fn execute(matches: ArgMatches) {
             let addr = matches
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
-            let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let addr = format!("ws://{}", addr);
             let chain_name = matches
                 .value_of("chain-name")
                 .expect("The name of chain is required; qed");
             let identifier = Blake2Hasher::hash(chain_name.as_bytes());
             println!("identifier: {:?}", identifier);
 
-            tokio_compat::run_std(async move {
-                create_client(addr, identifier)
-                    .await
-                    .expect("Failed to create client");
-            });
+            let result = async_std::task::block_on(create_client(&addr, identifier));
+            println!("create_client: {:?}", result);
         }
         ("conn-open-init", Some(matches)) => {
             let addr = matches
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
-            let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let addr = format!("ws://{}", addr);
             let client_identifier = matches
                 .value_of("client-identifier")
                 .expect("The identifier of chain is required; qed");
@@ -51,57 +46,48 @@ fn execute(matches: ArgMatches) {
             rand::thread_rng().fill_bytes(&mut data);
             let desired_counterparty_connection_identifier = H256::from_slice(&data);
 
-            tokio_compat::run_std(async move {
-                conn_open_init(
-                    addr,
-                    identifier,
-                    desired_counterparty_connection_identifier,
-                    client_identifier,
-                    counterparty_client_identifier,
-                )
-                .await
-                .expect("Failed to open connection");
-            });
+            let result = async_std::task::block_on(conn_open_init(
+                &addr,
+                identifier,
+                desired_counterparty_connection_identifier,
+                client_identifier,
+                counterparty_client_identifier,
+            ));
+            println!("conn_open_init: {:?}", result);
         }
         ("bind-port", Some(matches)) => {
             let addr = matches
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
-            let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let addr = format!("ws://{}", addr);
             let identifier = matches
                 .value_of("identifier")
                 .expect("The identifier of port is required; qed");
             let identifier = identifier.as_bytes().to_vec();
             println!("identifier: {:?}", identifier);
 
-            tokio_compat::run_std(async move {
-                bind_port(addr, identifier)
-                    .await
-                    .expect("Failed to bind port");
-            });
+            let result = async_std::task::block_on(bind_port(&addr, identifier));
+            println!("bind_port: {:?}", result);
         }
         ("release-port", Some(matches)) => {
             let addr = matches
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
-            let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let addr = format!("ws://{}", addr);
             let identifier = matches
                 .value_of("identifier")
                 .expect("The identifier of port is required; qed");
             let identifier = identifier.as_bytes().to_vec();
             println!("identifier: {:?}", identifier);
 
-            tokio_compat::run_std(async move {
-                release_port(addr, identifier)
-                    .await
-                    .expect("Failed to release port");
-            });
+            let result = async_std::task::block_on(release_port(&addr, identifier));
+            println!("release_port: {:?}", result);
         }
         ("chan-open-init", Some(matches)) => {
             let addr = matches
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
-            let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let addr = format!("ws://{}", addr);
             let unordered = matches.is_present("unordered");
             let connection_identifier = matches
                 .value_of("connection-identifier")
@@ -124,25 +110,22 @@ fn execute(matches: ArgMatches) {
             rand::thread_rng().fill_bytes(&mut data);
             let desired_counterparty_channel_identifier = H256::from_slice(&data);
 
-            tokio_compat::run_std(async move {
-                chan_open_init(
-                    addr,
-                    unordered,
-                    connection_hops,
-                    port_identifier,
-                    channel_identifier,
-                    counterparty_port_identifier,
-                    desired_counterparty_channel_identifier,
-                )
-                .await
-                .expect("Failed to open channel");
-            });
+            let result = async_std::task::block_on(chan_open_init(
+                &addr,
+                unordered,
+                connection_hops,
+                port_identifier,
+                channel_identifier,
+                counterparty_port_identifier,
+                desired_counterparty_channel_identifier,
+            ));
+            println!("chan_open_init: {:?}", result);
         }
         ("send-packet", Some(matches)) => {
             let addr = matches
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
-            let addr = Url::parse(&format!("ws://{}", addr)).expect("Is valid url; qed");
+            let addr = format!("ws://{}", addr);
             let sequence = matches
                 .value_of("sequence")
                 .expect("The sequence of packet is required; qed");
@@ -174,20 +157,17 @@ fn execute(matches: ArgMatches) {
                 .expect("The data of packet is required; qed");
             let data: Vec<u8> = hex::decode(data).expect("Invalid message");
 
-            tokio_compat::run_std(async move {
-                send_packet(
-                    addr,
-                    sequence,
-                    timeout_height,
-                    source_port,
-                    source_channel,
-                    dest_port,
-                    dest_channel,
-                    data,
-                )
-                .await
-                .expect("Failed to send packet");
-            });
+            let result = async_std::task::block_on(send_packet(
+                &addr,
+                sequence,
+                timeout_height,
+                source_port,
+                source_channel,
+                dest_port,
+                dest_channel,
+                data,
+            ));
+            println!("send_packet: {:?}", result);
         }
         _ => print_usage(&matches),
     }
@@ -264,22 +244,19 @@ fn main() {
     execute(matches);
 }
 
-async fn create_client(addr: Url, identifier: H256) -> Result<(), Box<dyn Error>> {
+async fn create_client(addr: &str, identifier: H256) -> Result<(), Box<dyn Error>> {
     let signer = AccountKeyring::Bob.pair();
     let client = ClientBuilder::<Runtime>::new()
-        .set_url(addr.clone())
+        .set_url(addr)
         .build()
-        .compat()
         .await?;
-    let xt = client.xt(signer, None).compat().await?;
-    xt.submit(template::test_create_client(identifier))
-        .compat()
-        .await?;
+    let xt = client.xt(signer, None).await?;
+    xt.submit(template::test_create_client(identifier)).await?;
     Ok(())
 }
 
 async fn conn_open_init(
-    addr: Url,
+    addr: &str,
     identifier: H256,
     desired_counterparty_connection_identifier: H256,
     client_identifier: H256,
@@ -289,50 +266,42 @@ async fn conn_open_init(
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
-        .compat()
         .await?;
-    let xt = client.xt(signer, None).compat().await?;
+    let xt = client.xt(signer, None).await?;
     xt.submit(template::test_conn_open_init(
         identifier,
         desired_counterparty_connection_identifier,
         client_identifier,
         counterparty_client_identifier,
     ))
-    .compat()
     .await?;
     Ok(())
 }
 
-async fn bind_port(addr: Url, identifier: Vec<u8>) -> Result<(), Box<dyn Error>> {
+async fn bind_port(addr: &str, identifier: Vec<u8>) -> Result<(), Box<dyn Error>> {
     let signer = AccountKeyring::Bob.pair();
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
-        .compat()
         .await?;
-    let xt = client.xt(signer, None).compat().await?;
-    xt.submit(template::test_bind_port(identifier))
-        .compat()
-        .await?;
+    let xt = client.xt(signer, None).await?;
+    xt.submit(template::test_bind_port(identifier)).await?;
     Ok(())
 }
 
-async fn release_port(addr: Url, identifier: Vec<u8>) -> Result<(), Box<dyn Error>> {
+async fn release_port(addr: &str, identifier: Vec<u8>) -> Result<(), Box<dyn Error>> {
     let signer = AccountKeyring::Bob.pair();
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
-        .compat()
         .await?;
-    let xt = client.xt(signer, None).compat().await?;
-    xt.submit(template::test_release_port(identifier))
-        .compat()
-        .await?;
+    let xt = client.xt(signer, None).await?;
+    xt.submit(template::test_release_port(identifier)).await?;
     Ok(())
 }
 
 async fn chan_open_init(
-    addr: Url,
+    addr: &str,
     unordered: bool,
     connection_hops: Vec<H256>,
     port_identifier: Vec<u8>,
@@ -344,9 +313,8 @@ async fn chan_open_init(
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
-        .compat()
         .await?;
-    let xt = client.xt(signer, None).compat().await?;
+    let xt = client.xt(signer, None).await?;
     xt.submit(template::test_chan_open_init(
         unordered,
         connection_hops,
@@ -355,13 +323,12 @@ async fn chan_open_init(
         counterparty_port_identifier,
         counterparty_channel_identifier,
     ))
-    .compat()
     .await?;
     Ok(())
 }
 
 async fn send_packet(
-    addr: Url,
+    addr: &str,
     sequence: u64,
     timeout_height: u32,
     source_port: Vec<u8>,
@@ -374,9 +341,8 @@ async fn send_packet(
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
-        .compat()
         .await?;
-    let xt = client.xt(signer, None).compat().await?;
+    let xt = client.xt(signer, None).await?;
     xt.submit(template::test_send_packet(
         sequence,
         timeout_height,
@@ -386,7 +352,6 @@ async fn send_packet(
         dest_channel,
         data,
     ))
-    .compat()
     .await?;
     Ok(())
 }

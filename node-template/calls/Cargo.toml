@@ -5,7 +5,7 @@ authors = ["Yuanchao Sun <ys@cdot.network>"]
 edition = "2018"
 
 [dependencies]
-futures = "0.1"
+futures = "0.3"
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive", "full"] }
 substrate-subxt = { path = "../../substrate-subxt" }
 node-runtime = { path = "../../node-template/runtime", package = "node-template-runtime" }

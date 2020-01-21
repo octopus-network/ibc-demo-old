@@ -4,8 +4,6 @@ use calls::{
 };
 use clap::{App, ArgMatches, SubCommand};
 use codec::Decode;
-use futures::compat::{Future01CompatExt, Stream01CompatExt};
-use futures::stream::StreamExt;
 use log::{debug, error, info};
 use pallet_ibc::{ChannelState, ConnectionState, Datagram, Packet};
 use sp_core::{storage::StorageKey, twox_128, Blake2Hasher, Hasher, H256};
@@ -16,7 +14,6 @@ use sp_storage::StorageChangeSet;
 use std::error::Error;
 use std::sync::mpsc::{channel, Sender};
 use substrate_subxt::{system::System, Client, ClientBuilder};
-use url::Url;
 
 type EventRecords = Vec<system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
 
@@ -26,18 +23,13 @@ fn execute(matches: ArgMatches) {
             let appia_addr = matches
                 .value_of("appia-addr")
                 .expect("The address of appia chain is required; qed");
-            let appia_addr =
-                Url::parse(&format!("ws://{}", appia_addr)).expect("Is valid url; qed");
+            let appia_addr = format!("ws://{}", appia_addr);
             let flaminia_addr = matches
                 .value_of("flaminia-addr")
                 .expect("The address of flaminia chain is required; qed");
-            let flaminia_addr =
-                Url::parse(&format!("ws://{}", flaminia_addr)).expect("Is valid url; qed");
-            tokio_compat::run_std(async {
-                run(appia_addr, flaminia_addr)
-                    .await
-                    .expect("Failed to run relayer");
-            });
+            let flaminia_addr = format!("ws://{}", flaminia_addr);
+            let result = async_std::task::block_on(run(&appia_addr, &flaminia_addr));
+            println!("run: {:?}", result);
         }
         _ => print_usage(&matches),
     }
@@ -65,28 +57,18 @@ fn main() {
     execute(matches);
 }
 
-async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> {
+async fn run(appia_addr: &str, flaminia_addr: &str) -> Result<(), Box<dyn Error>> {
     let appia_client = ClientBuilder::<Runtime>::new()
-        .set_url(appia_addr.clone())
+        .set_url(appia_addr)
         .build()
-        .compat()
         .await?;
     let flaminia_client = ClientBuilder::<Runtime>::new()
-        .set_url(flaminia_addr.clone())
+        .set_url(flaminia_addr)
         .build()
-        .compat()
         .await?;
 
-    let mut appia_block_headers = appia_client
-        .subscribe_finalized_blocks()
-        .compat()
-        .await?
-        .compat();
-    let mut flaminia_block_headers = flaminia_client
-        .subscribe_finalized_blocks()
-        .compat()
-        .await?
-        .compat();
+    let mut appia_block_headers = appia_client.subscribe_finalized_blocks().await?;
+    let mut flaminia_block_headers = flaminia_client.subscribe_finalized_blocks().await?;
 
     let appia = Blake2Hasher::hash(b"appia");
     let flaminia = Blake2Hasher::hash(b"flaminia");
@@ -97,8 +79,9 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
     {
         let appia_client = appia_client.clone();
         let flaminia_client = flaminia_client.clone();
-        tokio::spawn(async move {
-            while let Some(Ok(block_header)) = appia_block_headers.next().await {
+        async_std::task::spawn(async move {
+            loop {
+                let block_header = appia_block_headers.next().await;
                 let tx = tx1.clone();
                 if let Err(e) = relay(
                     "appia",
@@ -120,8 +103,9 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
     {
         let appia_client = appia_client.clone();
         let flaminia_client = flaminia_client.clone();
-        tokio::spawn(async move {
-            while let Some(Ok(block_header)) = flaminia_block_headers.next().await {
+        async_std::task::spawn(async move {
+            loop {
+                let block_header = flaminia_block_headers.next().await;
                 let tx = tx2.clone();
                 if let Err(e) = relay(
                     "flaminia",
@@ -140,9 +124,9 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
         });
     }
 
-    tokio::spawn(async move {
+    async_std::task::spawn(async move {
         let signer = AccountKeyring::Alice.pair();
-        let mut xt = flaminia_client.xt(signer, None).compat().await.unwrap();
+        let mut xt = flaminia_client.xt(signer, None).await.unwrap();
         let mut first = true;
         loop {
             let datagram = rx1.recv().unwrap();
@@ -153,7 +137,7 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
                 _ => info!("[relayer => flaminia] datagram: {:#?}", datagram),
             }
             if first {
-                if let Err(e) = xt.submit(ibc::submit_datagram(datagram)).compat().await {
+                if let Err(e) = xt.submit(ibc::submit_datagram(datagram)).await {
                     error!(
                         "[relayer => flaminia] failed to send datagram; error = {}",
                         e
@@ -165,7 +149,6 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
             if let Err(e) = xt
                 .increment_nonce()
                 .submit(ibc::submit_datagram(datagram))
-                .compat()
                 .await
             {
                 error!(
@@ -176,9 +159,9 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
         }
     });
 
-    tokio::spawn(async move {
+    async_std::task::block_on(async move {
         let signer = AccountKeyring::Alice.pair();
-        let mut xt = appia_client.xt(signer, None).compat().await.unwrap();
+        let mut xt = appia_client.xt(signer, None).await.unwrap();
         let mut first = true;
         loop {
             let datagram = rx2.recv().unwrap();
@@ -189,7 +172,7 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
                 _ => info!("[relayer => appia] datagram: {:#?}", datagram),
             }
             if first {
-                if let Err(e) = xt.submit(ibc::submit_datagram(datagram)).compat().await {
+                if let Err(e) = xt.submit(ibc::submit_datagram(datagram)).await {
                     error!("[relayer => appia] failed to send datagram; error = {}", e);
                 }
                 first = false;
@@ -198,7 +181,6 @@ async fn run(appia_addr: Url, flaminia_addr: Url) -> Result<(), Box<dyn Error>> 
             if let Err(e) = xt
                 .increment_nonce()
                 .submit(ibc::submit_datagram(datagram))
-                .compat()
                 .await
             {
                 error!("[relayer => appia] failed to send datagram; error = {}", e);
@@ -229,17 +211,13 @@ async fn relay(
     info!("[{}] state_root: {:?}", chain_name, state_root);
     info!("[{}] block_hash: {:?}", chain_name, block_hash);
     let map = counterparty_client
-        .query_client_consensus_state(&counterparty_client_identifier)
-        .compat()
+        .query_client_consensus_state(counterparty_client_identifier)
         .await?;
     debug!("[{}] query counterparty client: {:#?}", chain_name, map);
     if map.consensus_state.height < header_number {
         for height in map.consensus_state.height + 1..header_number {
-            let hash = client
-                .block_hash(Some(NumberOrHex::Number(height)))
-                .compat()
-                .await?;
-            let header = client.header(hash).compat().await?;
+            let hash = client.block_hash(Some(NumberOrHex::Number(height))).await?;
+            let header = client.header(hash).await?;
             if let Some(header) = header {
                 let datagram = Datagram::ClientUpdate {
                     identifier: counterparty_client_identifier,
@@ -255,16 +233,14 @@ async fn relay(
         tx.send(datagram).unwrap();
     }
     let connections = client
-        .get_connections_using_client(&client_identifier)
-        .compat()
+        .get_connections_using_client(client_identifier)
         .await?;
     info!("[{}] connections: {:?}", chain_name, connections);
     for connection in connections.iter() {
-        let connection_end = client.get_connection(&connection).compat().await?;
+        let connection_end = client.get_connection(*connection).await?;
         debug!("[{}] connection_end: {:#?}", chain_name, connection_end);
         let remote_connection_end = counterparty_client
-            .get_connection(&connection_end.counterparty_connection_identifier)
-            .compat()
+            .get_connection(connection_end.counterparty_connection_identifier)
             .await?;
         debug!(
             "[{}] remote_connection_end: {:#?}",
@@ -314,12 +290,11 @@ async fn relay(
             tx.send(datagram).unwrap();
         }
     }
-    let channels = client.get_channel_keys().compat().await?;
+    let channels = client.get_channel_keys().await?;
     info!("[{}] channels: {:?}", chain_name, channels);
     for channel in channels.iter() {
         let channel_end = client
             .get_channels_using_connections(vec![], channel.0.clone(), channel.1)
-            .compat()
             .await?;
         debug!("[{}] channel_end: {:#?}", chain_name, channel_end);
         let remote_channel_end = counterparty_client
@@ -327,7 +302,6 @@ async fn relay(
                 channel_end.counterparty_port_identifier.clone(),
                 channel_end.counterparty_channel_identifier,
             ))
-            .compat()
             .await?;
         debug!(
             "[{}] remote_channel_end: {:#?}",
@@ -340,8 +314,7 @@ async fn relay(
         if channel_end.state == ChannelState::Init && remote_channel_end.state == ChannelState::None
         {
             let connection_end = client
-                .get_connection(&channel_end.connection_hops[0])
-                .compat()
+                .get_connection(channel_end.connection_hops[0])
                 .await?;
             let datagram = Datagram::ChanOpenTry {
                 order: channel_end.ordering,
@@ -383,7 +356,6 @@ async fn relay(
 
     let change_sets: Vec<StorageChangeSet<H256>> = client
         .query_storage(vec![events_storage_key], block_hash, None)
-        .compat()
         .await?;
     info!("length of change_sets: {:?}", change_sets.len());
     info!("change_sets: {:?}", change_sets);

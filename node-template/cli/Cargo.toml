@@ -8,11 +8,9 @@ edition = "2018"
 clap = "2.33.0"
 hex = "0.4.0"
 rand = "0.7.2"
-tokio = { version = "0.2", features = ["full"] }
-url = "1.7"
-futures = { version = "0.3.1", features = ["compat"] }
+futures = "0.3"
+async-std = "1.4.0"
 substrate-subxt = { path = "../../substrate-subxt" }
-tokio-compat = { package = "tokio-compat", version = "0.1.0" }
 calls = { path = "../calls" }
 sp-core = { path = "../../substrate/primitives/core" }
 sp-keyring = { path = "../../substrate/primitives/keyring" }
