@@ -3,8 +3,6 @@
 ```
 $ cd node-template
 $ cargo build --release
-$ cargo build --release -p relayer
-$ cargo build --release -p cli
 $ ./target/release/node-template --base-path /tmp/chain-appia --dev -lruntime=debug --execution Native
 $ ./target/release/node-template --base-path /tmp/chain-flaminia --port 20333 --ws-port 8844 --grafana-port 8855 --dev -lruntime=debug --execution Native
 $ ./target/release/cli create-client 127.0.0.1:9944 flaminia
