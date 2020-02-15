@@ -19,6 +19,7 @@ impl System for NodeRuntime {
     >;
     type Header = <node_runtime::Runtime as frame_system::Trait>::Header;
     type Extrinsic = OpaqueExtrinsic;
+    type AccountData = <node_runtime::Runtime as frame_system::Trait>::AccountData;
 }
 
 impl Balances for NodeRuntime {

@@ -1,8 +1,10 @@
 use calls::{template, NodeRuntime as Runtime};
 use clap::{App, ArgMatches, SubCommand};
 use rand::RngCore;
-use sp_core::{Blake2Hasher, Hasher, H256};
+use sp_core::{storage::StorageKey, Blake2Hasher, Hasher, H256};
+use sp_finality_grandpa::{AuthorityList, VersionedAuthorityList, GRANDPA_AUTHORITIES_KEY};
 use sp_keyring::AccountKeyring;
+use sp_rpc::number::NumberOrHex;
 use std::error::Error;
 use substrate_subxt::ClientBuilder;
 
@@ -13,13 +15,18 @@ fn execute(matches: ArgMatches) {
                 .value_of("addr")
                 .expect("The address of chain is required; qed");
             let addr = format!("ws://{}", addr);
+            let counterparty_addr = matches
+                .value_of("counterparty-addr")
+                .expect("The address of counterparty chain is required; qed");
+            let counterparty_addr = format!("ws://{}", counterparty_addr);
             let chain_name = matches
                 .value_of("chain-name")
                 .expect("The name of chain is required; qed");
             let identifier = Blake2Hasher::hash(chain_name.as_bytes());
             println!("identifier: {:?}", identifier);
 
-            let result = async_std::task::block_on(create_client(&addr, identifier));
+            let result =
+                async_std::task::block_on(create_client(&addr, &counterparty_addr, identifier));
             println!("create_client: {:?}", result);
         }
         ("conn-open-init", Some(matches)) => {
@@ -187,6 +194,7 @@ fn main() {
             .args_from_usage(
                 "
 <addr> 'The address of demo chain'
+<counterparty-addr> 'The address of counterparty demo chain'
 <chain-name> 'The name of counterparty demo chain'
 ",
             )])
@@ -244,14 +252,42 @@ fn main() {
     execute(matches);
 }
 
-async fn create_client(addr: &str, identifier: H256) -> Result<(), Box<dyn Error>> {
+async fn create_client(
+    addr: &str,
+    counterparty_addr: &str,
+    identifier: H256,
+) -> Result<(), Box<dyn Error>> {
     let signer = AccountKeyring::Bob.pair();
+
+    let counterparty_client = ClientBuilder::<Runtime>::new()
+        .set_url(counterparty_addr)
+        .build()
+        .await?;
+    let storage_key = StorageKey(GRANDPA_AUTHORITIES_KEY.to_vec());
+
+    let genesis_hash = counterparty_client
+        .block_hash(Some(NumberOrHex::Number(0)))
+        .await?;
+    println!("counterparty genesis_hash: {:?}", genesis_hash);
+    let genesis_authority_list: AuthorityList = counterparty_client
+        .fetch(storage_key, genesis_hash)
+        .await?
+        .map(|versioned: VersionedAuthorityList| versioned.into())
+        .unwrap();
+    println!(
+        "counterparty genesis_authority_list: {:?}",
+        genesis_authority_list
+    );
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr)
         .build()
         .await?;
     let xt = client.xt(signer, None).await?;
-    xt.submit(template::test_create_client(identifier)).await?;
+    xt.submit(template::test_create_client(
+        identifier,
+        genesis_authority_list,
+    ))
+    .await?;
     Ok(())
 }
 

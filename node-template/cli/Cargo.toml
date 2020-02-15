@@ -13,5 +13,7 @@ async-std = "1.4.0"
 substrate-subxt = { path = "../../substrate-subxt" }
 calls = { path = "../calls" }
 sp-core = { path = "../../substrate/primitives/core" }
+sp-finality-grandpa = { path = "../../substrate/primitives/finality-grandpa" }
 sp-keyring = { path = "../../substrate/primitives/keyring" }
+sp-rpc = { path = "../../substrate/primitives/rpc" }
 node-runtime = { path = "../runtime", package = "node-template-runtime" }
