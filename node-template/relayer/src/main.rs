@@ -215,22 +215,20 @@ async fn relay(
         .await?;
     debug!("[{}] query counterparty client: {:#?}", chain_name, map);
     if map.consensus_state.height < header_number {
-        for height in map.consensus_state.height + 1..header_number {
+        for height in map.consensus_state.height + 1..=header_number {
             let hash = client.block_hash(Some(NumberOrHex::Number(height))).await?;
-            let header = client.header(hash).await?;
-            if let Some(header) = header {
+            let signed_block = client.block(hash).await?;
+            if let Some(signed_block) = signed_block {
+              if let Some(justification) = signed_block.justification {
                 let datagram = Datagram::ClientUpdate {
                     identifier: counterparty_client_identifier,
-                    header: header,
+                    header: signed_block.block.header,
+                    justification: justification,
                 };
                 tx.send(datagram).unwrap();
+              }
             }
         }
-        let datagram = Datagram::ClientUpdate {
-            identifier: counterparty_client_identifier,
-            header: block_header,
-        };
-        tx.send(datagram).unwrap();
     }
     let connections = client
         .get_connections_using_client(client_identifier)
