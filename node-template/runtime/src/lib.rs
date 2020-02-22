@@ -245,7 +245,6 @@ impl template::Trait for Runtime {
 
 impl ibc::Trait for Runtime {
 	type Event = Event;
-	type Block = Block;
 }
 
 construct_runtime!(

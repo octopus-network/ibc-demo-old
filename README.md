@@ -4,7 +4,7 @@
 $ cd node-template
 $ cargo build --release
 $ ./target/release/node-template --base-path /tmp/chain-appia --dev -lruntime=debug --execution Native
-$ ./target/release/node-template --base-path /tmp/chain-flaminia --port 20333 --ws-port 8844 --grafana-port 8855 --dev -lruntime=debug --execution Native
+$ ./target/release/node-template --base-path /tmp/chain-flaminia --port 20333 --ws-port 8844 --dev -lruntime=debug --execution Native
 $ ./target/release/cli create-client 127.0.0.1:9944 127.0.0.1:8844 flaminia
 identifier: 0x779ca65108d1d515c3e4bc2e9f6d2f90e27b33b147864d1cd422d9f92ce08e03
 $ ./target/release/cli create-client 127.0.0.1:8844 127.0.0.1:9944 appia
