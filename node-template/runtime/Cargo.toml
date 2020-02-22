@@ -1,43 +1,45 @@
 [package]
 name = "node-template-runtime"
-version = "2.0.0"
+version = "2.0.0-dev"
 authors = ["Anonymous"]
 edition = "2018"
 license = "Unlicense"
+homepage = "https://substrate.dev"
+repository = "https://github.com/paritytech/substrate/"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
 
-aura = { version = "2.0.0", default-features = false, package = "pallet-aura", path = "../../substrate/frame/aura" }
-balances = { version = "2.0.0", default-features = false, package = "pallet-balances", path = "../../substrate/frame/balances" }
-frame-support = { version = "2.0.0", default-features = false, path = "../../substrate/frame/support" }
-grandpa = { version = "2.0.0", default-features = false, package = "pallet-grandpa", path = "../../substrate/frame/grandpa" }
-indices = { version = "2.0.0", default-features = false, package = "pallet-indices", path = "../../substrate/frame/indices" }
-randomness-collective-flip = { version = "2.0.0", default-features = false, package = "pallet-randomness-collective-flip", path = "../../substrate/frame/randomness-collective-flip" }
-sudo = { version = "2.0.0", default-features = false, package = "pallet-sudo", path = "../../substrate/frame/sudo" }
-system = { version = "2.0.0", default-features = false, package = "frame-system", path = "../../substrate/frame/system" }
-timestamp = { version = "2.0.0", default-features = false, package = "pallet-timestamp", path = "../../substrate/frame/timestamp" }
-transaction-payment = { version = "2.0.0", default-features = false, package = "pallet-transaction-payment", path = "../../substrate/frame/transaction-payment" }
-frame-executive = { version = "2.0.0", default-features = false, path = "../../substrate/frame/executive" }
+aura = { version = "2.0.0-dev", default-features = false, package = "pallet-aura", path = "../../substrate/frame/aura" }
+balances = { version = "2.0.0-dev", default-features = false, package = "pallet-balances", path = "../../substrate/frame/balances" }
+frame-support = { version = "2.0.0-dev", default-features = false, path = "../../substrate/frame/support" }
+grandpa = { version = "2.0.0-dev", default-features = false, package = "pallet-grandpa", path = "../../substrate/frame/grandpa" }
+indices = { version = "2.0.0-dev", default-features = false, package = "pallet-indices", path = "../../substrate/frame/indices" }
+randomness-collective-flip = { version = "2.0.0-dev", default-features = false, package = "pallet-randomness-collective-flip", path = "../../substrate/frame/randomness-collective-flip" }
+sudo = { version = "2.0.0-dev", default-features = false, package = "pallet-sudo", path = "../../substrate/frame/sudo" }
+system = { version = "2.0.0-dev", default-features = false, package = "frame-system", path = "../../substrate/frame/system" }
+timestamp = { version = "2.0.0-dev", default-features = false, package = "pallet-timestamp", path = "../../substrate/frame/timestamp" }
+transaction-payment = { version = "2.0.0-dev", default-features = false, package = "pallet-transaction-payment", path = "../../substrate/frame/transaction-payment" }
+frame-executive = { version = "2.0.0-dev", default-features = false, path = "../../substrate/frame/executive" }
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
-sp-api = { version = "2.0.0", default-features = false, path = "../../substrate/primitives/api" }
-sp-block-builder = { path = "../../substrate/primitives/block-builder", default-features = false}
-sp-consensus-aura = { version = "0.8", default-features = false, path = "../../substrate/primitives/consensus/aura" }
-sp-core = { version = "2.0.0", default-features = false, path = "../../substrate/primitives/core" }
-sp-inherents = { path = "../../substrate/primitives/inherents", default-features = false}
-sp-io = { version = "2.0.0", default-features = false, path = "../../substrate/primitives/io" }
-sp-offchain = { version = "2.0.0", default-features = false, path = "../../substrate/primitives/offchain" }
-sp-runtime = { version = "2.0.0", default-features = false, path = "../../substrate/primitives/runtime" }
-sp-session = { version = "2.0.0", default-features = false, path = "../../substrate/primitives/session" }
-sp-std = { version = "2.0.0", default-features = false, path = "../../substrate/primitives/std" }
-sp-transaction-pool = { version = "2.0.0", default-features = false, path = "../../substrate/primitives/transaction-pool" }
-sp-version = { version = "2.0.0", default-features = false, path = "../../substrate/primitives/version" }
+sp-api = { version = "2.0.0-dev", default-features = false, path = "../../substrate/primitives/api" }
+sp-block-builder = { path = "../../substrate/primitives/block-builder", default-features = false, version = "2.0.0-dev"}
+sp-consensus-aura = { version = "0.8.0-dev", default-features = false, path = "../../substrate/primitives/consensus/aura" }
+sp-core = { version = "2.0.0-dev", default-features = false, path = "../../substrate/primitives/core" }
+sp-inherents = { path = "../../substrate/primitives/inherents", default-features = false, version = "2.0.0-dev"}
+sp-io = { version = "2.0.0-dev", default-features = false, path = "../../substrate/primitives/io" }
+sp-offchain = { version = "2.0.0-dev", default-features = false, path = "../../substrate/primitives/offchain" }
+sp-runtime = { version = "2.0.0-dev", default-features = false, path = "../../substrate/primitives/runtime" }
+sp-session = { version = "2.0.0-dev", default-features = false, path = "../../substrate/primitives/session" }
+sp-std = { version = "2.0.0-dev", default-features = false, path = "../../substrate/primitives/std" }
+sp-transaction-pool = { version = "2.0.0-dev", default-features = false, path = "../../substrate/primitives/transaction-pool" }
+sp-version = { version = "2.0.0-dev", default-features = false, path = "../../substrate/primitives/version" }
 
-template = { version = "2.0.0", default-features = false, path = "../pallets/template", package = "pallet-template" }
-ibc = { default-features = false, package = "pallet-ibc", path = "../frame/ibc" }
+template = { version = "2.0.0-dev", default-features = false, path = "../pallets/template", package = "pallet-template" }
+ibc = { default-features = false, path = "../frame/ibc", package = "pallet-ibc" }
 
 [build-dependencies]
-wasm-builder-runner = { version = "1.0.4", package = "substrate-wasm-builder-runner", path = "../../substrate/utils/wasm-builder-runner" }
+wasm-builder-runner = { version = "1.0.5", package = "substrate-wasm-builder-runner", path = "../../substrate/utils/wasm-builder-runner" }
 
 [features]
 default = ["std"]

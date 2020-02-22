@@ -2,7 +2,9 @@
 authors = ['Anonymous']
 edition = '2018'
 name = 'pallet-template'
-version = '2.0.0'
+version = "2.0.0-dev"
+homepage = "https://substrate.dev"
+repository = "https://github.com/paritytech/substrate/"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
@@ -10,42 +12,44 @@ safe-mix = { default-features = false, version = '1.0.0' }
 
 [dependencies.frame-support]
 default-features = false
-version = '2.0.0'
+version = "2.0.0-dev"
 path = "../../../substrate/frame/support"
 
 [dependencies.system]
 default-features = false
 package = 'frame-system'
-version = '2.0.0'
+version = "2.0.0-dev"
 path = "../../../substrate/frame/system"
 
 [dependencies.sp-core]
 default-features = false
-version = '2.0.0'
+version = "2.0.0-dev"
 path = "../../../substrate/primitives/core"
 
 [dev-dependencies.sp-io]
 default-features = false
-version = '2.0.0'
+version = "2.0.0-dev"
 path = "../../../substrate/primitives/io"
 
 [dev-dependencies.sp-runtime]
 default-features = false
-version = '2.0.0'
+version = "2.0.0-dev"
 path = "../../../substrate/primitives/runtime"
+
+[dependencies.sp-std]
+default-features = false
+version = "2.0.0-dev"
+path = "../../../substrate/primitives/std"
+
+[dependencies.sp-finality-grandpa]
+default-features = false
+version = "2.0.0-dev"
+path = "../../../substrate/primitives/finality-grandpa"
 
 [dependencies.ibc]
 default-features = false
 package = 'pallet-ibc'
 path = "../../frame/ibc"
-
-[dependencies.sp-std]
-default-features = false
-path = "../../../substrate/primitives/std"
-
-[dependencies.sp-finality-grandpa]
-default-features = false
-path = "../../../substrate/primitives/finality-grandpa"
 
 [features]
 default = ['std']
