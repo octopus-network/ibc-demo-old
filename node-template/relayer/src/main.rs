@@ -219,14 +219,14 @@ async fn relay(
             let hash = client.block_hash(Some(NumberOrHex::Number(height))).await?;
             let signed_block = client.block(hash).await?;
             if let Some(signed_block) = signed_block {
-              if let Some(justification) = signed_block.justification {
-                let datagram = Datagram::ClientUpdate {
-                    identifier: counterparty_client_identifier,
-                    header: signed_block.block.header,
-                    justification: justification,
-                };
-                tx.send(datagram).unwrap();
-              }
+                if let Some(justification) = signed_block.justification {
+                    let datagram = Datagram::ClientUpdate {
+                        identifier: counterparty_client_identifier,
+                        header: signed_block.block.header,
+                        justification: justification,
+                    };
+                    tx.send(datagram).unwrap();
+                }
             }
         }
     }
