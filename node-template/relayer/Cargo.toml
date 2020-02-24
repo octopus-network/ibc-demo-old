@@ -16,6 +16,7 @@ sp-core = { path = "../../substrate/primitives/core" }
 sp-runtime = { path = "../../substrate/primitives/runtime" }
 sp-rpc = { path = "../../substrate/primitives/rpc" }
 sp-storage = { path = "../../substrate/primitives/storage" }
+sp-finality-grandpa = { path = "../../substrate/primitives/finality-grandpa" }
 system = { package = "frame-system", path = "../../substrate/frame/system" }
 node-runtime = { path = "../runtime", package = "node-template-runtime" }
 pallet-ibc = { path = "../frame/ibc" }

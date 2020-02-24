@@ -7,6 +7,7 @@ use codec::Decode;
 use log::{debug, error, info};
 use pallet_ibc::{ChannelState, ConnectionState, Datagram, Packet};
 use sp_core::{storage::StorageKey, twox_128, Blake2Hasher, Hasher, H256};
+use sp_finality_grandpa::{AuthorityList, VersionedAuthorityList, GRANDPA_AUTHORITIES_KEY};
 use sp_keyring::AccountKeyring;
 use sp_rpc::number::NumberOrHex;
 use sp_runtime::generic;
@@ -218,12 +219,19 @@ async fn relay(
         for height in map.consensus_state.height + 1..=header_number {
             let hash = client.block_hash(Some(NumberOrHex::Number(height))).await?;
             let signed_block = client.block(hash).await?;
+            let authorities_storage_key = StorageKey(GRANDPA_AUTHORITIES_KEY.to_vec());
+            let authorities: Option<AuthorityList> = client
+                .fetch(authorities_storage_key, hash)
+                .await?
+                .map(|versioned: VersionedAuthorityList| versioned.into());
+            debug!("authorities: {:?}", authorities);
             if let Some(signed_block) = signed_block {
                 if let Some(justification) = signed_block.justification {
                     let datagram = Datagram::ClientUpdate {
                         identifier: counterparty_client_identifier,
                         header: signed_block.block.header,
-                        justification: justification,
+                        justification,
+                        new_authorities: authorities,
                     };
                     tx.send(datagram).unwrap();
                 }
