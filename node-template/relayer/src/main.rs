@@ -224,6 +224,14 @@ async fn relay(
                 .fetch(authorities_storage_key, hash)
                 .await?
                 .map(|versioned: VersionedAuthorityList| versioned.into());
+            let mut authorities_proof: Option<Vec<Vec<u8>>> = None;
+            if authorities.is_some() {
+                authorities_proof = Some(
+                    client
+                        .read_proof(hash.unwrap(), vec![GRANDPA_AUTHORITIES_KEY.to_vec()])
+                        .await?,
+                );
+            }
             debug!("authorities: {:?}", authorities);
             if let Some(signed_block) = signed_block {
                 if let Some(justification) = signed_block.justification {
@@ -232,6 +240,7 @@ async fn relay(
                         header: signed_block.block.header,
                         justification,
                         new_authorities: authorities,
+                        authorities_proof,
                     };
                     tx.send(datagram).unwrap();
                 }
