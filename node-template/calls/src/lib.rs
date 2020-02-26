@@ -13,10 +13,7 @@ impl System for NodeRuntime {
     type Hash = <node_runtime::Runtime as frame_system::Trait>::Hash;
     type Hashing = <node_runtime::Runtime as frame_system::Trait>::Hashing;
     type AccountId = <node_runtime::Runtime as frame_system::Trait>::AccountId;
-    type Address = pallet_indices::address::Address<
-        Self::AccountId,
-        <node_runtime::Runtime as pallet_indices::Trait>::AccountIndex,
-    >;
+    type Address = Self::AccountId;
     type Header = <node_runtime::Runtime as frame_system::Trait>::Header;
     type Extrinsic = OpaqueExtrinsic;
     type AccountData = <node_runtime::Runtime as frame_system::Trait>::AccountData;
