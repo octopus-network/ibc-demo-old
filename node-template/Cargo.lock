@@ -2888,6 +2888,7 @@ dependencies = [
  "finality-grandpa",
  "frame-support",
  "frame-system",
+ "hash-db",
  "pallet-balances",
  "parity-scale-codec",
  "serde",
@@ -2895,6 +2896,7 @@ dependencies = [
  "sp-finality-grandpa",
  "sp-runtime",
  "sp-std",
+ "sp-trie",
 ]
 
 [[package]]
