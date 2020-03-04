@@ -19,7 +19,7 @@ sp-storage = { path = "../../substrate/primitives/storage" }
 sp-finality-grandpa = { path = "../../substrate/primitives/finality-grandpa" }
 system = { package = "frame-system", path = "../../substrate/frame/system" }
 node-runtime = { path = "../runtime", package = "node-template-runtime" }
-pallet-ibc = { path = "../frame/ibc" }
-codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive", "full"] }
+pallet-ibc = { path = "../pallets/ibc" }
+codec = { package = "parity-scale-codec", version = "1.2.0", default-features = false, features = ["derive", "full"] }
 log = "0.4.0"
 env_logger = "0.7.1"

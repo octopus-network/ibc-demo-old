@@ -50,7 +50,7 @@ path = "../../../substrate/primitives/finality-grandpa"
 [dependencies.ibc]
 default-features = false
 package = 'pallet-ibc'
-path = "../../frame/ibc"
+path = "../ibc"
 
 
 [features]
