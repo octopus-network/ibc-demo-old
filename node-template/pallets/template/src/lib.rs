@@ -11,7 +11,7 @@
 
 use frame_support::{decl_module, decl_storage, decl_event, decl_error, dispatch, traits::ModuleToIndex};
 use sp_core::H256;
-use sp_finality_grandpa::AuthorityList;
+use sp_finality_grandpa::{AuthorityList, SetId};
 use sp_std::prelude::*;
 use system::ensure_signed;
 
@@ -104,10 +104,10 @@ decl_module! {
 			}
 		}
 
-		pub fn test_create_client(origin, identifier: H256, authority_list: AuthorityList) -> dispatch::DispatchResult {
+		pub fn test_create_client(origin,identifier: H256, height: u32, commitment_root: H256, set_id: SetId, authority_list: AuthorityList) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
 
-			<ibc::Module<T>>::create_client(identifier, authority_list)?;
+			<ibc::Module<T>>::create_client(identifier, height, commitment_root, set_id, authority_list)?;
 
 			Ok(())
 		}

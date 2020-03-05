@@ -13,11 +13,18 @@ pub trait IbcStore {
     /// IBC type.
     type Ibc: Ibc;
 
+    /// Returns the client state for a specific identifier.
+    fn query_client(
+        &self,
+        client_identifier: H256,
+    ) -> Pin<Box<dyn Future<Output = Result<pallet_ibc::ClientState, Error>> + Send>>;
+
     /// Returns the consensus state for a specific identifier.
     fn query_client_consensus_state(
         &self,
         client_identifier: H256,
-    ) -> Pin<Box<dyn Future<Output = Result<pallet_ibc::Client, Error>> + Send>>;
+        height: u32,
+    ) -> Pin<Box<dyn Future<Output = Result<pallet_ibc::ConsensusState, Error>> + Send>>;
 
     fn get_connections_using_client(
         &self,
@@ -49,18 +56,18 @@ pub trait IbcStore {
 impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
     type Ibc = T;
 
-    fn query_client_consensus_state(
+    fn query_client(
         &self,
         client_identifier: H256,
-    ) -> Pin<Box<dyn Future<Output = Result<pallet_ibc::Client, Error>> + Send>> {
-        let clients = || {
+    ) -> Pin<Box<dyn Future<Output = Result<pallet_ibc::ClientState, Error>> + Send>> {
+        let get_clients = || {
             Ok(self
                 .metadata()
                 .module("Ibc")?
                 .storage("Clients")?
                 .get_map()?)
         };
-        let map = match clients() {
+        let map = match get_clients() {
             Ok(map) => map,
             Err(err) => return Box::pin(future::err(err)),
         };
@@ -68,6 +75,30 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         Box::pin(async move {
             client
                 .fetch_or(map.key(client_identifier), None, map.default())
+                .await
+        })
+    }
+
+    fn query_client_consensus_state(
+        &self,
+        client_identifier: H256,
+        height: u32,
+    ) -> Pin<Box<dyn Future<Output = Result<pallet_ibc::ConsensusState, Error>> + Send>> {
+        let get_consensus_states = || {
+            Ok(self
+                .metadata()
+                .module("Ibc")?
+                .storage("ConsensusStates")?
+                .get_map()?)
+        };
+        let map = match get_consensus_states() {
+            Ok(map) => map,
+            Err(err) => return Box::pin(future::err(err)),
+        };
+        let client = self.clone();
+        Box::pin(async move {
+            client
+                .fetch_or(map.key((client_identifier, height)), None, map.default())
                 .await
         })
     }
@@ -93,7 +124,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
             client
                 .fetch_or(map.key(client_identifier), None, map.default())
                 .await
-                .map(|client: pallet_ibc::Client| client.connections)
+                .map(|client: pallet_ibc::ClientState| client.connections)
         })
     }
 

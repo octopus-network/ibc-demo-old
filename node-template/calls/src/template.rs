@@ -1,7 +1,7 @@
 //! Implements support for the template module.
 use codec::Encode;
 use sp_core::H256;
-use sp_finality_grandpa::AuthorityList;
+use sp_finality_grandpa::{AuthorityList, SetId};
 use substrate_subxt::{system::System, Call};
 
 const MODULE: &str = "TemplateModule";
@@ -19,12 +19,18 @@ pub trait TemplateModule: System {}
 #[derive(Encode)]
 pub struct TestCreateClientArgs {
     identifier: H256,
+    height: u32,
+    commitment_root: H256,
+    set_id: SetId,
     authority_list: AuthorityList,
 }
 
 /// Creating a test client.
 pub fn test_create_client(
     identifier: H256,
+    height: u32,
+    commitment_root: H256,
+    set_id: SetId,
     authority_list: AuthorityList,
 ) -> Call<TestCreateClientArgs> {
     Call::new(
@@ -32,6 +38,9 @@ pub fn test_create_client(
         TEST_CREATE_CLIENT,
         TestCreateClientArgs {
             identifier,
+            height,
+            commitment_root,
+            set_id,
             authority_list,
         },
     )

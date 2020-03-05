@@ -269,6 +269,8 @@ async fn create_client(
         .block_hash(Some(NumberOrHex::Number(0)))
         .await?;
     println!("counterparty genesis_hash: {:?}", genesis_hash);
+    let genesis_header = counterparty_client.header(genesis_hash).await?.unwrap();
+    println!("counterparty genesis_header: {:?}", genesis_header);
     let genesis_authority_list: AuthorityList = counterparty_client
         .fetch(storage_key, genesis_hash)
         .await?
@@ -285,6 +287,9 @@ async fn create_client(
     let xt = client.xt(signer, None).await?;
     xt.submit(template::test_create_client(
         identifier,
+        0,
+        genesis_header.state_root,
+        0,
         genesis_authority_list,
     ))
     .await?;

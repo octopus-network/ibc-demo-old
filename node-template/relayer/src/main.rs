@@ -212,11 +212,11 @@ async fn relay(
     info!("[{}] state_root: {:?}", chain_name, state_root);
     info!("[{}] block_hash: {:?}", chain_name, block_hash);
     let map = counterparty_client
-        .query_client_consensus_state(counterparty_client_identifier)
+        .query_client(counterparty_client_identifier)
         .await?;
     debug!("[{}] query counterparty client: {:#?}", chain_name, map);
-    if map.consensus_state.height < header_number {
-        for height in map.consensus_state.height + 1..=header_number {
+    if map.latest_height < header_number {
+        for height in map.latest_height + 1..=header_number {
             let hash = client.block_hash(Some(NumberOrHex::Number(height))).await?;
             let signed_block = client.block(hash).await?;
             let authorities_proof = client
