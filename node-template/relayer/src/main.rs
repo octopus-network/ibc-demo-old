@@ -220,7 +220,10 @@ async fn relay(
             let hash = client.block_hash(Some(NumberOrHex::Number(height))).await?;
             let signed_block = client.block(hash).await?;
             let authorities_proof = client
-                .read_proof(hash.unwrap(), vec![GRANDPA_AUTHORITIES_KEY.to_vec()])
+                .read_proof(
+                    hash.unwrap(),
+                    vec![StorageKey(GRANDPA_AUTHORITIES_KEY.to_vec())],
+                )
                 .await?;
             if let Some(signed_block) = signed_block {
                 if let Some(justification) = signed_block.justification {
