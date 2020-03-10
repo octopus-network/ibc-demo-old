@@ -212,7 +212,7 @@ async fn relay(
     info!("[{}] state_root: {:?}", chain_name, state_root);
     info!("[{}] block_hash: {:?}", chain_name, block_hash);
     let map = counterparty_client
-        .query_client(counterparty_client_identifier)
+        .query_client(None, counterparty_client_identifier)
         .await?;
     debug!("[{}] query counterparty client: {:#?}", chain_name, map);
     if map.latest_height < header_number {
@@ -239,14 +239,14 @@ async fn relay(
         }
     }
     let connections = client
-        .get_connections_using_client(client_identifier)
+        .get_connections_using_client(block_hash, client_identifier)
         .await?;
     info!("[{}] connections: {:?}", chain_name, connections);
     for connection in connections.iter() {
-        let connection_end = client.get_connection(*connection).await?;
+        let connection_end = client.get_connection(Some(block_hash), *connection).await?;
         debug!("[{}] connection_end: {:#?}", chain_name, connection_end);
         let remote_connection_end = counterparty_client
-            .get_connection(connection_end.counterparty_connection_identifier)
+            .get_connection(None, connection_end.counterparty_connection_identifier)
             .await?;
         debug!(
             "[{}] remote_connection_end: {:#?}",
@@ -260,6 +260,10 @@ async fn relay(
         if connection_end.state == ConnectionState::Init
             && remote_connection_end.state == ConnectionState::None
         {
+            let proof_consensus = client
+                .consensus_state_proof(block_hash, (client_identifier, header_number))
+                .await?;
+            let proof_init = client.connection_proof(block_hash, *connection).await?;
             let datagram = Datagram::ConnOpenTry {
                 desired_identifier: connection_end.counterparty_connection_identifier,
                 counterparty_connection_identifier: *connection,
@@ -267,8 +271,8 @@ async fn relay(
                 client_identifier: counterparty_client_identifier,
                 version: vec![],
                 counterparty_version: vec![],
-                proof_init: vec![],
-                proof_consensus: vec![],
+                proof_init,
+                proof_consensus,
                 proof_height: header_number,
                 consensus_height: 0, // TODO: local consensus state height
             };
@@ -296,18 +300,21 @@ async fn relay(
             tx.send(datagram).unwrap();
         }
     }
-    let channels = client.get_channel_keys().await?;
+    let channels = client.get_channel_keys(block_hash).await?;
     info!("[{}] channels: {:?}", chain_name, channels);
     for channel in channels.iter() {
         let channel_end = client
-            .get_channels_using_connections(vec![], channel.0.clone(), channel.1)
+            .get_channels_using_connections(block_hash, vec![], channel.0.clone(), channel.1)
             .await?;
         debug!("[{}] channel_end: {:#?}", chain_name, channel_end);
         let remote_channel_end = counterparty_client
-            .get_channel((
-                channel_end.counterparty_port_identifier.clone(),
-                channel_end.counterparty_channel_identifier,
-            ))
+            .get_channel(
+                None,
+                (
+                    channel_end.counterparty_port_identifier.clone(),
+                    channel_end.counterparty_channel_identifier,
+                ),
+            )
             .await?;
         debug!(
             "[{}] remote_channel_end: {:#?}",
@@ -320,7 +327,7 @@ async fn relay(
         if channel_end.state == ChannelState::Init && remote_channel_end.state == ChannelState::None
         {
             let connection_end = client
-                .get_connection(channel_end.connection_hops[0])
+                .get_connection(Some(block_hash), channel_end.connection_hops[0])
                 .await?;
             let datagram = Datagram::ChanOpenTry {
                 order: channel_end.ordering,
