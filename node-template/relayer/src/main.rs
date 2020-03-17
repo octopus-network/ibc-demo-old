@@ -5,7 +5,7 @@ use calls::{
 use clap::{App, ArgMatches, SubCommand};
 use codec::Decode;
 use log::{debug, error, info};
-use pallet_ibc::{ChannelState, ConnectionState, Datagram, Packet};
+use pallet_ibc::{ChannelState, ConnectionState, Datagram, Header, Packet};
 use sp_core::{storage::StorageKey, twox_128, Blake2Hasher, Hasher, H256};
 use sp_finality_grandpa::GRANDPA_AUTHORITIES_KEY;
 use sp_keyring::AccountKeyring;
@@ -229,9 +229,13 @@ async fn relay(
                 if let Some(justification) = signed_block.justification {
                     let datagram = Datagram::ClientUpdate {
                         identifier: counterparty_client_identifier,
-                        header: signed_block.block.header,
-                        justification,
-                        authorities_proof,
+                        header: Header {
+                            height: signed_block.block.header.number,
+                            block_hash: signed_block.block.header.hash(),
+                            commitment_root: signed_block.block.header.state_root,
+                            justification,
+                            authorities_proof,
+                        },
                     };
                     tx.send(datagram).unwrap();
                 }
