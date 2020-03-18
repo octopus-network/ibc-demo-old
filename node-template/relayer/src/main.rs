@@ -133,9 +133,9 @@ async fn run(appia_addr: &str, flaminia_addr: &str) -> Result<(), Box<dyn Error>
             let datagram = rx1.recv().unwrap();
             match datagram {
                 Datagram::ClientUpdate { .. } => {
-                    info!("[relayer => flaminia] datagram: {:?}", datagram)
+                    debug!("[relayer => flaminia] datagram: {:?}", datagram)
                 }
-                _ => info!("[relayer => flaminia] datagram: {:#?}", datagram),
+                _ => debug!("[relayer => flaminia] datagram: {:#?}", datagram),
             }
             if first {
                 if let Err(e) = xt.submit(ibc::submit_datagram(datagram)).await {
@@ -168,9 +168,9 @@ async fn run(appia_addr: &str, flaminia_addr: &str) -> Result<(), Box<dyn Error>
             let datagram = rx2.recv().unwrap();
             match datagram {
                 Datagram::ClientUpdate { .. } => {
-                    info!("[relayer => appia] datagram: {:?}", datagram)
+                    debug!("[relayer => appia] datagram: {:?}", datagram)
                 }
-                _ => info!("[relayer => appia] datagram: {:#?}", datagram),
+                _ => debug!("[relayer => appia] datagram: {:#?}", datagram),
             }
             if first {
                 if let Err(e) = xt.submit(ibc::submit_datagram(datagram)).await {
@@ -205,18 +205,25 @@ async fn relay(
     storage_key.extend(twox_128(b"Events").to_vec());
     let events_storage_key = StorageKey(storage_key);
 
-    let header_number = block_header.number;
+    let block_number = block_header.number;
     let state_root = block_header.state_root;
     let block_hash = block_header.hash();
-    info!("[{}] header_number: {:?}", chain_name, header_number);
-    info!("[{}] state_root: {:?}", chain_name, state_root);
-    info!("[{}] block_hash: {:?}", chain_name, block_hash);
+    debug!("[{}] block_number: {}", chain_name, block_number);
+    debug!("[{}] state_root: {:?}", chain_name, state_root);
+    debug!("[{}] block_hash: {:?}", chain_name, block_hash);
+    let client_state = client.query_client(None, client_identifier).await?;
+    let counterparty_block_hash = counterparty_client
+        .block_hash(Some(NumberOrHex::Number(client_state.latest_height)))
+        .await?;
+    info!(
+        "[{}] client latest height: {}",
+        chain_name, client_state.latest_height
+    );
     let map = counterparty_client
         .query_client(None, counterparty_client_identifier)
         .await?;
-    debug!("[{}] query counterparty client: {:#?}", chain_name, map);
-    if map.latest_height < header_number {
-        for height in map.latest_height + 1..=header_number {
+    if map.latest_height < block_number {
+        for height in map.latest_height + 1..=block_number {
             let hash = client.block_hash(Some(NumberOrHex::Number(height))).await?;
             let signed_block = client.block(hash).await?;
             let authorities_proof = client
@@ -250,14 +257,17 @@ async fn relay(
         let connection_end = client.get_connection(Some(block_hash), *connection).await?;
         debug!("[{}] connection_end: {:#?}", chain_name, connection_end);
         let remote_connection_end = counterparty_client
-            .get_connection(None, connection_end.counterparty_connection_identifier)
+            .get_connection(
+                counterparty_block_hash,
+                connection_end.counterparty_connection_identifier,
+            )
             .await?;
         debug!(
             "[{}] remote_connection_end: {:#?}",
             chain_name, remote_connection_end
         );
         info!(
-            "[{}] connection state: {:?}, remote connection state: {:?}",
+            "[{}] connection state: {:?}, counterparty connection state: {:?}",
             chain_name, connection_end.state, remote_connection_end.state
         );
         // TODO: remote_connection_end == None ??
@@ -265,7 +275,7 @@ async fn relay(
             && remote_connection_end.state == ConnectionState::None
         {
             let proof_consensus = client
-                .consensus_state_proof(block_hash, (client_identifier, header_number))
+                .consensus_state_proof(block_hash, (client_identifier, block_number))
                 .await?;
             let proof_init = client.connection_proof(block_hash, *connection).await?;
             let datagram = Datagram::ConnOpenTry {
@@ -277,7 +287,7 @@ async fn relay(
                 counterparty_version: vec![],
                 proof_init,
                 proof_consensus,
-                proof_height: header_number,
+                proof_height: block_number,
                 consensus_height: 0, // TODO: local consensus state height
             };
             tx.send(datagram).unwrap();
@@ -313,7 +323,7 @@ async fn relay(
         debug!("[{}] channel_end: {:#?}", chain_name, channel_end);
         let remote_channel_end = counterparty_client
             .get_channel(
-                None,
+                counterparty_block_hash,
                 (
                     channel_end.counterparty_port_identifier.clone(),
                     channel_end.counterparty_channel_identifier,
@@ -325,7 +335,7 @@ async fn relay(
             chain_name, remote_channel_end
         );
         info!(
-            "[{}] channle state: {:?}, remote channel state: {:?}",
+            "[{}] channle state: {:?}, counterparty channel state: {:?}",
             chain_name, channel_end.state, remote_channel_end.state
         );
         if channel_end.state == ChannelState::Init && remote_channel_end.state == ChannelState::None
@@ -374,8 +384,8 @@ async fn relay(
     let change_sets: Vec<StorageChangeSet<H256>> = client
         .query_storage(vec![events_storage_key], block_hash, None)
         .await?;
-    info!("length of change_sets: {:?}", change_sets.len());
-    info!("change_sets: {:?}", change_sets);
+    debug!("length of change_sets: {:?}", change_sets.len());
+    debug!("change_sets: {:?}", change_sets);
     change_sets.iter().for_each(|change_set| {
         change_set
             .changes
@@ -394,7 +404,7 @@ async fn relay(
                         dest_channel,
                     )) => {
                         let block_hash = change_set.block.clone();
-                        info!(
+                        debug!(
                             "[{}] SendPacket hash: {:?}, sequence: {}, data: {:?}, \
                              timeout_height: {}, source_port: {:?}, source_channel: {:?}, \
                              dest_port: {:?}, dest_channel: {:?}",
@@ -433,7 +443,7 @@ async fn relay(
                         dest_port,
                         dest_channel,
                     )) => {
-                        info!(
+                        debug!(
                             "[{}] RecvPacket sequence: {}, data: {:?}, timeout_height: {}, \
                              source_port: {:?}, source_channel: {:?}, dest_port: {:?}, \
                              dest_channel: {:?}",

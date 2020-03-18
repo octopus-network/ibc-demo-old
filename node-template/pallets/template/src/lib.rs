@@ -104,10 +104,22 @@ decl_module! {
 			}
 		}
 
-		pub fn test_create_client(origin,identifier: H256, height: u32, commitment_root: H256, set_id: SetId, authority_list: AuthorityList) -> dispatch::DispatchResult {
+		pub fn test_create_client(
+			origin,
+			identifier: H256,
+			height: u32,
+			set_id: SetId,
+			authorities: AuthorityList,
+			commitment_root: H256
+		) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
 
-			<ibc::Module<T>>::create_client(identifier, height, commitment_root, set_id, authority_list)?;
+			let consensus_state = ibc::ConsensusState {
+				set_id,
+				authorities,
+				commitment_root,
+			};
+			<ibc::Module<T>>::create_client(identifier, ibc::ClientType::GRANDPA, height, consensus_state)?;
 
 			Ok(())
 		}

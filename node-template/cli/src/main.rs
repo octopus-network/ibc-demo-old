@@ -263,7 +263,6 @@ async fn create_client(
         .set_url(counterparty_addr)
         .build()
         .await?;
-    let storage_key = StorageKey(GRANDPA_AUTHORITIES_KEY.to_vec());
 
     let genesis_hash = counterparty_client
         .block_hash(Some(NumberOrHex::Number(0)))
@@ -271,14 +270,15 @@ async fn create_client(
     println!("counterparty genesis_hash: {:?}", genesis_hash);
     let genesis_header = counterparty_client.header(genesis_hash).await?.unwrap();
     println!("counterparty genesis_header: {:?}", genesis_header);
-    let genesis_authority_list: AuthorityList = counterparty_client
+    let storage_key = StorageKey(GRANDPA_AUTHORITIES_KEY.to_vec());
+    let genesis_authorities: AuthorityList = counterparty_client
         .fetch(storage_key, genesis_hash)
         .await?
         .map(|versioned: VersionedAuthorityList| versioned.into())
         .unwrap();
     println!(
-        "counterparty genesis_authority_list: {:?}",
-        genesis_authority_list
+        "counterparty genesis_authorities: {:?}",
+        genesis_authorities
     );
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr)
@@ -288,9 +288,9 @@ async fn create_client(
     xt.submit(template::test_create_client(
         identifier,
         0,
-        genesis_header.state_root,
         0,
-        genesis_authority_list,
+        genesis_authorities,
+        genesis_header.state_root,
     ))
     .await?;
     Ok(())

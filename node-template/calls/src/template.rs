@@ -20,18 +20,18 @@ pub trait TemplateModule: System {}
 pub struct TestCreateClientArgs {
     identifier: H256,
     height: u32,
-    commitment_root: H256,
     set_id: SetId,
     authority_list: AuthorityList,
+    commitment_root: H256,
 }
 
 /// Creating a test client.
 pub fn test_create_client(
     identifier: H256,
     height: u32,
-    commitment_root: H256,
     set_id: SetId,
     authority_list: AuthorityList,
+    commitment_root: H256,
 ) -> Call<TestCreateClientArgs> {
     Call::new(
         MODULE,
@@ -39,9 +39,9 @@ pub fn test_create_client(
         TestCreateClientArgs {
             identifier,
             height,
-            commitment_root,
             set_id,
             authority_list,
+            commitment_root,
         },
     )
 }
