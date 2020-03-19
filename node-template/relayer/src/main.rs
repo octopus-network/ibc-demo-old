@@ -296,22 +296,24 @@ async fn relay(
         } else if connection_end.state == ConnectionState::TryOpen
             && remote_connection_end.state == ConnectionState::Init
         {
+            let proof_try = client.connection_proof(block_hash, *connection).await?;
             let datagram = Datagram::ConnOpenAck {
                 identifier: connection_end.counterparty_connection_identifier,
                 version: vec![],
-                proof_try: vec![],
+                proof_try,
                 proof_consensus: vec![],
-                proof_height: 0,
+                proof_height: block_number,
                 consensus_height: 0,
             };
             tx.send(datagram).unwrap();
         } else if connection_end.state == ConnectionState::Open
             && remote_connection_end.state == ConnectionState::TryOpen
         {
+            let proof_ack = client.connection_proof(block_hash, *connection).await?;
             let datagram = Datagram::ConnOpenConfirm {
                 identifier: connection_end.counterparty_connection_identifier,
-                proof_ack: vec![],
-                proof_height: 0,
+                proof_ack,
+                proof_height: block_number,
             };
             tx.send(datagram).unwrap();
         }
