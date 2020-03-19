@@ -252,7 +252,9 @@ async fn relay(
     let connections = client
         .get_connections_using_client(block_hash, client_identifier)
         .await?;
-    info!("[{}] connections: {:?}", chain_name, connections);
+    if connections.len() > 0 {
+        info!("[{}] connections: {:?}", chain_name, connections);
+    }
     for connection in connections.iter() {
         let connection_end = client.get_connection(Some(block_hash), *connection).await?;
         debug!("[{}] connection_end: {:#?}", chain_name, connection_end);
@@ -314,11 +316,15 @@ async fn relay(
             tx.send(datagram).unwrap();
         }
     }
-    let channels = client.get_channel_keys(block_hash).await?;
-    info!("[{}] channels: {:?}", chain_name, channels);
+    let channels = client
+        .get_channels_using_client(block_hash, client_identifier)
+        .await?;
+    if channels.len() > 0 {
+        info!("[{}] channels: {:?}", chain_name, channels);
+    }
     for channel in channels.iter() {
         let channel_end = client
-            .get_channels_using_connections(block_hash, vec![], channel.0.clone(), channel.1)
+            .get_channel(Some(block_hash), channel.clone())
             .await?;
         debug!("[{}] channel_end: {:#?}", chain_name, channel_end);
         let remote_channel_end = counterparty_client
@@ -418,6 +424,7 @@ async fn relay(
                             dest_port,
                             dest_channel
                         );
+                        info!("[{}] SendPacket data: {:?}", chain_name, data);
                         let packet_data = Packet {
                             sequence,
                             timeout_height,
@@ -456,6 +463,7 @@ async fn relay(
                             dest_port,
                             dest_channel
                         );
+                        info!("[{}] RecvPacket data: {:?}", chain_name, data);
                         // relay packet acknowledgement with this sequence number
                         let packet_data = Packet {
                             sequence,

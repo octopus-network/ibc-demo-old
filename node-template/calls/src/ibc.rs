@@ -1,7 +1,7 @@
 //! Implements support for the pallet_ibc module.
 use codec::Encode;
 use futures::future::{self, Future};
-use sp_core::{storage::StorageKey, twox_128, H256};
+use sp_core::H256;
 use std::pin::Pin;
 use substrate_subxt::{balances::Balances, system::System, Call, Client, Error};
 
@@ -40,17 +40,10 @@ pub trait IbcStore {
         connection_identifier: H256,
     ) -> Pin<Box<dyn Future<Output = Result<pallet_ibc::ConnectionEnd, Error>> + Send>>;
 
-    fn get_channels_using_connections(
+    fn get_channels_using_client(
         &self,
         block_hash: <Self::Ibc as System>::Hash,
-        _connections: Vec<H256>,
-        port_identifier: Vec<u8>,
-        channel_identifier: H256,
-    ) -> Pin<Box<dyn Future<Output = Result<pallet_ibc::ChannelEnd, Error>> + Send>>;
-
-    fn get_channel_keys(
-        &self,
-        block_hash: <Self::Ibc as System>::Hash,
+        client_identifier: H256,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<(Vec<u8>, H256)>, Error>> + Send>>;
 
     fn get_channel(
@@ -97,7 +90,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
                 .fetch(map.key(client_identifier), block_hash)
                 .await
                 .transpose()
-                .unwrap_or(Err(Error::Other("Not found".to_string())))
+                .unwrap_or(Err(Error::Other("Client state not found".to_string())))
         })
     }
 
@@ -124,7 +117,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
                 .fetch(map.key((client_identifier, height)), Some(block_hash))
                 .await
                 .transpose()
-                .unwrap_or(Err(Error::Other("Not found".to_string())))
+                .unwrap_or(Err(Error::Other("Consensus state not found".to_string())))
         })
     }
 
@@ -180,51 +173,28 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
     }
 
     // TODO
-    fn get_channels_using_connections(
+    fn get_channels_using_client(
         &self,
         block_hash: <Self::Ibc as System>::Hash,
-        _connections: Vec<H256>,
-        port_identifier: Vec<u8>,
-        channel_identifier: H256,
-    ) -> Pin<Box<dyn Future<Output = Result<pallet_ibc::ChannelEnd, Error>> + Send>> {
-        let get_channels = || {
+        client_identifier: H256,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<(Vec<u8>, H256)>, Error>> + Send>> {
+        let clients = || {
             Ok(self
                 .metadata()
                 .module("Ibc")?
-                .storage("Channels")?
-                .get_map::<(Vec<u8>, H256), pallet_ibc::ChannelEnd>()?)
+                .storage("Clients")?
+                .get_map()?)
         };
-        let map = match get_channels() {
+        let map = match clients() {
             Ok(map) => map,
             Err(err) => return Box::pin(future::err(err)),
         };
         let client = self.clone();
         Box::pin(async move {
             client
-                .fetch(
-                    map.key((port_identifier, channel_identifier)),
-                    Some(block_hash),
-                )
+                .fetch_or(map.key(client_identifier), Some(block_hash), map.default())
                 .await
-                .transpose()
-                .unwrap_or(Err(Error::Other("Not found".to_string())))
-        })
-    }
-
-    // TODO
-    fn get_channel_keys(
-        &self,
-        block_hash: <Self::Ibc as System>::Hash,
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<(Vec<u8>, H256)>, Error>> + Send>> {
-        let mut storage_key = twox_128(b"Ibc").to_vec();
-        storage_key.extend(twox_128(b"ChannelKeys").to_vec());
-        let client = self.clone();
-        Box::pin(async move {
-            client
-                .fetch(StorageKey(storage_key), Some(block_hash))
-                .await
-                .transpose()
-                .unwrap_or(Ok(vec![]))
+                .map(|client: pallet_ibc::ClientState| client.channels)
         })
     }
 
@@ -247,10 +217,8 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         let client = self.clone();
         Box::pin(async move {
             client
-                .fetch(map.key(identifier_tuple), block_hash)
+                .fetch_or_default(map.key(identifier_tuple), block_hash)
                 .await
-                .transpose()
-                .unwrap_or(Err(Error::Other("Not found".to_string())))
         })
     }
 
