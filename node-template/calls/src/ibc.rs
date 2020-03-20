@@ -63,6 +63,12 @@ pub trait IbcStore {
         block_hash: <Self::Ibc as System>::Hash,
         identifier: H256,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>>;
+
+    fn channel_proof(
+        &self,
+        block_hash: <Self::Ibc as System>::Hash,
+        identifier_tuple: (Vec<u8>, H256),
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>>;
 }
 
 impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
@@ -266,6 +272,30 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         Box::pin(async move {
             client
                 .read_proof(block_hash, vec![map.key(identifier)])
+                .await
+        })
+    }
+
+    fn channel_proof(
+        &self,
+        block_hash: <Self::Ibc as System>::Hash,
+        identifier_tuple: (Vec<u8>, H256),
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>> {
+        let get_channels = || {
+            Ok(self
+                .metadata()
+                .module("Ibc")?
+                .storage("Channels")?
+                .get_map::<(Vec<u8>, H256), pallet_ibc::ChannelEnd>()?)
+        };
+        let map = match get_channels() {
+            Ok(map) => map,
+            Err(err) => return Box::pin(future::err(err)),
+        };
+        let client = self.clone();
+        Box::pin(async move {
+            client
+                .read_proof(block_hash, vec![map.key(identifier_tuple)])
                 .await
         })
     }

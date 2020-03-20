@@ -351,6 +351,7 @@ async fn relay(
             let connection_end = client
                 .get_connection(Some(block_hash), channel_end.connection_hops[0])
                 .await?;
+            let proof_init = client.channel_proof(block_hash, channel.clone()).await?;
             let datagram = Datagram::ChanOpenTry {
                 order: channel_end.ordering,
                 // connection_hops: channel_end.connection_hops.into_iter().rev().collect(), // ??
@@ -361,29 +362,31 @@ async fn relay(
                 counterparty_channel_identifier: channel.1,
                 version: channel_end.version.clone(),
                 counterparty_version: channel_end.version,
-                proof_init: vec![],
-                proof_height: 0,
+                proof_init,
+                proof_height: block_number,
             };
             tx.send(datagram).unwrap();
         } else if channel_end.state == ChannelState::TryOpen
             && remote_channel_end.state == ChannelState::Init
         {
+            let proof_try = client.channel_proof(block_hash, channel.clone()).await?;
             let datagram = Datagram::ChanOpenAck {
                 port_identifier: channel_end.counterparty_port_identifier,
                 channel_identifier: channel_end.counterparty_channel_identifier,
                 version: remote_channel_end.version,
-                proof_try: vec![],
-                proof_height: 0,
+                proof_try,
+                proof_height: block_number,
             };
             tx.send(datagram).unwrap();
         } else if channel_end.state == ChannelState::Open
             && remote_channel_end.state == ChannelState::TryOpen
         {
+            let proof_ack = client.channel_proof(block_hash, channel.clone()).await?;
             let datagram = Datagram::ChanOpenConfirm {
                 port_identifier: channel_end.counterparty_port_identifier,
                 channel_identifier: channel_end.counterparty_channel_identifier,
-                proof_ack: vec![],
-                proof_height: 0,
+                proof_ack,
+                proof_height: block_number,
             };
             tx.send(datagram).unwrap();
         }
