@@ -397,100 +397,89 @@ async fn relay(
         .await?;
     debug!("length of change_sets: {:?}", change_sets.len());
     debug!("change_sets: {:?}", change_sets);
-    change_sets.iter().for_each(|change_set| {
-        change_set
-            .changes
-            .iter()
-            .filter_map(|(_key, data)| data.as_ref().map(|data| Decode::decode(&mut &data.0[..])))
-            .filter_map(|result: Result<EventRecords, codec::Error>| result.ok())
-            .for_each(|events| {
-                events.into_iter().for_each(|event| match event.event {
-                    node_runtime::Event::ibc(pallet_ibc::RawEvent::SendPacket(
-                        sequence,
-                        data,
-                        timeout_height,
-                        source_port,
-                        source_channel,
-                        dest_port,
-                        dest_channel,
-                    )) => {
-                        let block_hash = change_set.block.clone();
-                        debug!(
-                            "[{}] SendPacket hash: {:?}, sequence: {}, data: {:?}, \
-                             timeout_height: {}, source_port: {:?}, source_channel: {:?}, \
-                             dest_port: {:?}, dest_channel: {:?}",
-                            chain_name,
-                            block_hash,
-                            sequence,
-                            data,
-                            timeout_height,
-                            source_port,
-                            source_channel,
-                            dest_port,
-                            dest_channel
-                        );
-                        info!("[{}] SendPacket data: {:?}", chain_name, data);
-                        let packet_data = Packet {
-                            sequence,
-                            timeout_height,
-                            source_port,
-                            source_channel,
-                            dest_port,
-                            dest_channel,
-                            data,
-                        };
-                        let datagram = Datagram::PacketRecv {
-                            packet: packet_data,
-                            proof: vec![],
-                            proof_height: 0,
-                        };
-                        tx.send(datagram).unwrap();
-                    }
-                    node_runtime::Event::ibc(pallet_ibc::RawEvent::RecvPacket(
-                        sequence,
-                        data,
-                        timeout_height,
-                        source_port,
-                        source_channel,
-                        dest_port,
-                        dest_channel,
-                    )) => {
-                        debug!(
-                            "[{}] RecvPacket sequence: {}, data: {:?}, timeout_height: {}, \
+    let events = change_sets
+        .into_iter()
+        .map(|change_set| change_set.changes)
+        .flatten()
+        .filter_map(|(_key, data)| data.as_ref().map(|data| Decode::decode(&mut &data.0[..])))
+        .filter_map(|result: Result<EventRecords, codec::Error>| result.ok())
+        .flatten()
+        .collect::<Vec<system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>>();
+    for event in events.into_iter() {
+        match event.event {
+            node_runtime::Event::ibc(pallet_ibc::RawEvent::SendPacket(
+                sequence,
+                data,
+                timeout_height,
+                source_port,
+                source_channel,
+                dest_port,
+                dest_channel,
+            )) => {
+                info!("[{}] SendPacket data: {:?}", chain_name, data);
+                let packet_data = Packet {
+                    sequence,
+                    timeout_height,
+                    source_port: source_port.clone(),
+                    source_channel,
+                    dest_port,
+                    dest_channel,
+                    data,
+                };
+                let proof = client
+                    .packet_proof(block_hash, (source_port, source_channel, timeout_height))
+                    .await?;
+                let datagram = Datagram::PacketRecv {
+                    packet: packet_data,
+                    proof,
+                    proof_height: block_number,
+                };
+                tx.send(datagram).unwrap();
+            }
+            node_runtime::Event::ibc(pallet_ibc::RawEvent::RecvPacket(
+                sequence,
+                data,
+                timeout_height,
+                source_port,
+                source_channel,
+                dest_port,
+                dest_channel,
+            )) => {
+                debug!(
+                    "[{}] RecvPacket sequence: {}, data: {:?}, timeout_height: {}, \
                              source_port: {:?}, source_channel: {:?}, dest_port: {:?}, \
                              dest_channel: {:?}",
-                            chain_name,
-                            sequence,
-                            data,
-                            timeout_height,
-                            source_port,
-                            source_channel,
-                            dest_port,
-                            dest_channel
-                        );
-                        info!("[{}] RecvPacket data: {:?}", chain_name, data);
-                        // relay packet acknowledgement with this sequence number
-                        let packet_data = Packet {
-                            sequence,
-                            timeout_height,
-                            source_port,
-                            source_channel,
-                            dest_port,
-                            dest_channel,
-                            data,
-                        };
-                        let datagram = Datagram::PacketAcknowledgement {
-                            packet: packet_data,
-                            acknowledgement: vec![],
-                            proof: vec![],
-                            proof_height: 0,
-                        };
-                        tx.send(datagram).unwrap();
-                    }
-                    _ => {}
-                });
-            });
-    });
+                    chain_name,
+                    sequence,
+                    data,
+                    timeout_height,
+                    source_port,
+                    source_channel,
+                    dest_port,
+                    dest_channel
+                );
+                info!("[{}] RecvPacket data: {:?}", chain_name, data);
+                // relay packet acknowledgement with this sequence number
+                let packet_data = Packet {
+                    sequence,
+                    timeout_height,
+                    source_port,
+                    source_channel,
+                    dest_port,
+                    dest_channel,
+                    data,
+                };
+                let datagram = Datagram::PacketAcknowledgement {
+                    packet: packet_data,
+                    acknowledgement: vec![],
+                    proof: vec![],
+                    proof_height: 0,
+                };
+                tx.send(datagram).unwrap();
+            }
+            _ => {}
+        }
+    }
 
     Ok(())
 }
