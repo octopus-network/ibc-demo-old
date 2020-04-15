@@ -4,9 +4,8 @@ use rand::RngCore;
 use sp_core::{storage::StorageKey, Blake2Hasher, Hasher, H256};
 use sp_finality_grandpa::{AuthorityList, VersionedAuthorityList, GRANDPA_AUTHORITIES_KEY};
 use sp_keyring::AccountKeyring;
-use sp_rpc::number::NumberOrHex;
 use std::error::Error;
-use substrate_subxt::ClientBuilder;
+use substrate_subxt::{BlockNumber, ClientBuilder};
 
 fn execute(matches: ArgMatches) {
     match matches.subcommand() {
@@ -265,7 +264,7 @@ async fn create_client(
         .await?;
 
     let genesis_hash = counterparty_client
-        .block_hash(Some(NumberOrHex::Number(0)))
+        .block_hash(Some(BlockNumber::from(0u32)))
         .await?;
     println!("counterparty genesis_hash: {:?}", genesis_hash);
     let genesis_header = counterparty_client.header(genesis_hash).await?.unwrap();

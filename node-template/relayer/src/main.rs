@@ -9,12 +9,11 @@ use pallet_ibc::{ChannelState, ConnectionState, Datagram, Header, Packet};
 use sp_core::{storage::StorageKey, twox_128, Blake2Hasher, Hasher, H256};
 use sp_finality_grandpa::GRANDPA_AUTHORITIES_KEY;
 use sp_keyring::AccountKeyring;
-use sp_rpc::number::NumberOrHex;
 use sp_runtime::generic;
 use sp_storage::StorageChangeSet;
 use std::error::Error;
 use std::sync::mpsc::{channel, Sender};
-use substrate_subxt::{system::System, Client, ClientBuilder};
+use substrate_subxt::{system::System, BlockNumber, Client, ClientBuilder};
 
 type EventRecords = Vec<system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
 
@@ -213,7 +212,7 @@ async fn relay(
     debug!("[{}] block_hash: {:?}", chain_name, block_hash);
     let client_state = client.query_client(None, client_identifier).await?;
     let counterparty_block_hash = counterparty_client
-        .block_hash(Some(NumberOrHex::Number(client_state.latest_height)))
+        .block_hash(Some(BlockNumber::from(client_state.latest_height)))
         .await?;
     info!(
         "[{}] client latest height: {}",
@@ -224,7 +223,7 @@ async fn relay(
         .await?;
     if map.latest_height < block_number {
         for height in map.latest_height + 1..=block_number {
-            let hash = client.block_hash(Some(NumberOrHex::Number(height))).await?;
+            let hash = client.block_hash(Some(BlockNumber::from(height))).await?;
             let signed_block = client.block(hash).await?;
             let authorities_proof = client
                 .read_proof(
