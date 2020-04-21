@@ -11,11 +11,13 @@ futures = "0.3"
 async-std = "1.4.0"
 substrate-subxt = { path = "../../substrate-subxt" }
 calls = { path = "../calls" }
+sc-rpc-api = { path = "../../substrate/client/rpc-api" }
 sp-keyring = { path = "../../substrate/primitives/keyring" }
 sp-core = { path = "../../substrate/primitives/core" }
 sp-runtime = { path = "../../substrate/primitives/runtime" }
 sp-rpc = { path = "../../substrate/primitives/rpc" }
 sp-storage = { path = "../../substrate/primitives/storage" }
+sp-trie = { path = "../../substrate/primitives/trie" }
 sp-finality-grandpa = { path = "../../substrate/primitives/finality-grandpa" }
 system = { package = "frame-system", path = "../../substrate/frame/system" }
 node-runtime = { path = "../runtime", package = "node-template-runtime" }

@@ -11,6 +11,7 @@ use sp_finality_grandpa::GRANDPA_AUTHORITIES_KEY;
 use sp_keyring::AccountKeyring;
 use sp_runtime::generic;
 use sp_storage::StorageChangeSet;
+use sp_trie::StorageProof;
 use std::error::Error;
 use std::sync::mpsc::{channel, Sender};
 use substrate_subxt::{system::System, BlockNumber, Client, ClientBuilder};
@@ -227,8 +228,8 @@ async fn relay(
             let signed_block = client.block(hash).await?;
             let authorities_proof = client
                 .read_proof(
-                    hash.unwrap(),
                     vec![StorageKey(GRANDPA_AUTHORITIES_KEY.to_vec())],
+                    Some(hash.unwrap()),
                 )
                 .await?;
             if let Some(signed_block) = signed_block {
@@ -240,7 +241,7 @@ async fn relay(
                             block_hash: signed_block.block.header.hash(),
                             commitment_root: signed_block.block.header.state_root,
                             justification,
-                            authorities_proof,
+                            authorities_proof: StorageProof::new(authorities_proof.proof.into_iter().map(|b| b.0).collect()),
                         },
                     };
                     tx.send(datagram).unwrap();
@@ -286,8 +287,8 @@ async fn relay(
                 client_identifier: counterparty_client_identifier,
                 version: vec![],
                 counterparty_version: vec![],
-                proof_init,
-                proof_consensus,
+                proof_init: StorageProof::new(proof_init.proof.into_iter().map(|b| b.0).collect()),
+                proof_consensus: StorageProof::new(proof_consensus.proof.into_iter().map(|b| b.0).collect()),
                 proof_height: block_number,
                 consensus_height: 0, // TODO: local consensus state height
             };
@@ -299,8 +300,8 @@ async fn relay(
             let datagram = Datagram::ConnOpenAck {
                 identifier: connection_end.counterparty_connection_identifier,
                 version: vec![],
-                proof_try,
-                proof_consensus: vec![],
+                proof_try: StorageProof::new(proof_try.proof.into_iter().map(|b| b.0).collect()),
+                proof_consensus: StorageProof::empty(),
                 proof_height: block_number,
                 consensus_height: 0,
             };
@@ -311,7 +312,7 @@ async fn relay(
             let proof_ack = client.connection_proof(block_hash, *connection).await?;
             let datagram = Datagram::ConnOpenConfirm {
                 identifier: connection_end.counterparty_connection_identifier,
-                proof_ack,
+                proof_ack: StorageProof::new(proof_ack.proof.into_iter().map(|b| b.0).collect()),
                 proof_height: block_number,
             };
             tx.send(datagram).unwrap();
@@ -361,7 +362,7 @@ async fn relay(
                 counterparty_channel_identifier: channel.1,
                 version: channel_end.version.clone(),
                 counterparty_version: channel_end.version,
-                proof_init,
+                proof_init: StorageProof::new(proof_init.proof.into_iter().map(|b| b.0).collect()),
                 proof_height: block_number,
             };
             tx.send(datagram).unwrap();
@@ -373,7 +374,7 @@ async fn relay(
                 port_identifier: channel_end.counterparty_port_identifier,
                 channel_identifier: channel_end.counterparty_channel_identifier,
                 version: remote_channel_end.version,
-                proof_try,
+                proof_try: StorageProof::new(proof_try.proof.into_iter().map(|b| b.0).collect()),
                 proof_height: block_number,
             };
             tx.send(datagram).unwrap();
@@ -384,7 +385,7 @@ async fn relay(
             let datagram = Datagram::ChanOpenConfirm {
                 port_identifier: channel_end.counterparty_port_identifier,
                 channel_identifier: channel_end.counterparty_channel_identifier,
-                proof_ack,
+                proof_ack: StorageProof::new(proof_ack.proof.into_iter().map(|b| b.0).collect()),
                 proof_height: block_number,
             };
             tx.send(datagram).unwrap();
@@ -430,7 +431,7 @@ async fn relay(
                     .await?;
                 let datagram = Datagram::PacketRecv {
                     packet: packet_data,
-                    proof,
+                    proof: StorageProof::new(proof.proof.into_iter().map(|b| b.0).collect()),
                     proof_height: block_number,
                 };
                 tx.send(datagram).unwrap();
@@ -471,7 +472,7 @@ async fn relay(
                 let datagram = Datagram::PacketAcknowledgement {
                     packet: packet_data,
                     acknowledgement: vec![],
-                    proof: vec![],
+                    proof: StorageProof::empty(),
                     proof_height: 0,
                 };
                 tx.send(datagram).unwrap();

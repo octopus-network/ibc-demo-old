@@ -1,6 +1,7 @@
 //! Implements support for the pallet_ibc module.
 use codec::Encode;
 use futures::future::{self, Future};
+use sc_rpc_api::state::ReadProof;
 use sp_core::H256;
 use std::pin::Pin;
 use substrate_subxt::{balances::Balances, system::System, Call, Client, Error};
@@ -56,25 +57,25 @@ pub trait IbcStore {
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier_tuple: (H256, u32),
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>>;
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>>;
 
     fn connection_proof(
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier: H256,
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>>;
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>>;
 
     fn channel_proof(
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier_tuple: (Vec<u8>, H256),
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>>;
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>>;
 
     fn packet_proof(
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier_tuple: (Vec<u8>, H256, u32),
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>>;
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>>;
 }
 
 impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
@@ -238,7 +239,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier_tuple: (H256, u32),
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>> {
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>> {
         let get_consensus_states = || {
             Ok(self
                 .metadata()
@@ -253,7 +254,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         let client = self.clone();
         Box::pin(async move {
             client
-                .read_proof(block_hash, vec![map.key(identifier_tuple)])
+                .read_proof(vec![map.key(identifier_tuple)], Some(block_hash))
                 .await
         })
     }
@@ -262,7 +263,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier: H256,
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>> {
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>> {
         let get_connections = || {
             Ok(self
                 .metadata()
@@ -277,7 +278,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         let client = self.clone();
         Box::pin(async move {
             client
-                .read_proof(block_hash, vec![map.key(identifier)])
+                .read_proof(vec![map.key(identifier)], Some(block_hash))
                 .await
         })
     }
@@ -286,7 +287,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier_tuple: (Vec<u8>, H256),
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>> {
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>> {
         let get_channels = || {
             Ok(self
                 .metadata()
@@ -301,7 +302,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         let client = self.clone();
         Box::pin(async move {
             client
-                .read_proof(block_hash, vec![map.key(identifier_tuple)])
+                .read_proof(vec![map.key(identifier_tuple)], Some(block_hash))
                 .await
         })
     }
@@ -310,7 +311,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier_tuple: (Vec<u8>, H256, u32),
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<Vec<u8>>, Error>> + Send>> {
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>> {
         let get_packets = || {
             Ok(self
                 .metadata()
@@ -325,7 +326,7 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         let client = self.clone();
         Box::pin(async move {
             client
-                .read_proof(block_hash, vec![map.key(identifier_tuple)])
+                .read_proof(vec![map.key(identifier_tuple)], Some(block_hash))
                 .await
         })
     }
