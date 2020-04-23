@@ -241,7 +241,9 @@ async fn relay(
                             block_hash: signed_block.block.header.hash(),
                             commitment_root: signed_block.block.header.state_root,
                             justification,
-                            authorities_proof: StorageProof::new(authorities_proof.proof.into_iter().map(|b| b.0).collect()),
+                            authorities_proof: StorageProof::new(
+                                authorities_proof.proof.into_iter().map(|b| b.0).collect(),
+                            ),
                         },
                     };
                     tx.send(datagram).unwrap();
@@ -288,7 +290,9 @@ async fn relay(
                 version: vec![],
                 counterparty_version: vec![],
                 proof_init: StorageProof::new(proof_init.proof.into_iter().map(|b| b.0).collect()),
-                proof_consensus: StorageProof::new(proof_consensus.proof.into_iter().map(|b| b.0).collect()),
+                proof_consensus: StorageProof::new(
+                    proof_consensus.proof.into_iter().map(|b| b.0).collect(),
+                ),
                 proof_height: block_number,
                 consensus_height: 0, // TODO: local consensus state height
             };

@@ -239,7 +239,8 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier_tuple: (H256, u32),
-    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>> {
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>>
+    {
         let get_consensus_states = || {
             Ok(self
                 .metadata()
@@ -263,7 +264,8 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier: H256,
-    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>> {
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>>
+    {
         let get_connections = || {
             Ok(self
                 .metadata()
@@ -287,7 +289,8 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier_tuple: (Vec<u8>, H256),
-    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>> {
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>>
+    {
         let get_channels = || {
             Ok(self
                 .metadata()
@@ -311,7 +314,8 @@ impl<T: Ibc + Sync + Send + 'static, S: 'static> IbcStore for Client<T, S> {
         &self,
         block_hash: <Self::Ibc as System>::Hash,
         identifier_tuple: (Vec<u8>, H256, u32),
-    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>> {
+    ) -> Pin<Box<dyn Future<Output = Result<ReadProof<<Self::Ibc as System>::Hash>, Error>> + Send>>
+    {
         let get_packets = || {
             Ok(self
                 .metadata()
