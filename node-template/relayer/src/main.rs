@@ -448,6 +448,7 @@ async fn relay(
                 source_channel,
                 dest_port,
                 dest_channel,
+                acknowledgement,
             )) => {
                 debug!(
                     "[{}] RecvPacket sequence: {}, data: {:?}, timeout_height: {}, \
@@ -467,17 +468,23 @@ async fn relay(
                 let packet_data = Packet {
                     sequence,
                     timeout_height,
-                    source_port,
+                    source_port: source_port.clone(),
                     source_channel,
                     dest_port,
                     dest_channel,
                     data,
                 };
+                let proof = client
+                    .acknowledgement_proof(
+                        block_hash,
+                        (source_port, source_channel, timeout_height),
+                    )
+                    .await?;
                 let datagram = Datagram::PacketAcknowledgement {
                     packet: packet_data,
-                    acknowledgement: vec![],
-                    proof: StorageProof::empty(),
-                    proof_height: 0,
+                    acknowledgement,
+                    proof: StorageProof::new(proof.proof.into_iter().map(|b| b.0).collect()),
+                    proof_height: block_number,
                 };
                 tx.send(datagram).unwrap();
             }
