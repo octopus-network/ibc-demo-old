@@ -89,9 +89,9 @@ async fn run(appia_addr: &str, flaminia_addr: &str) -> Result<(), Box<dyn Error>
                     tx,
                     block_header,
                     &appia_client,
-                    flaminia,
-                    &flaminia_client,
                     appia,
+                    &flaminia_client,
+                    flaminia,
                 )
                 .await
                 {
@@ -113,9 +113,9 @@ async fn run(appia_addr: &str, flaminia_addr: &str) -> Result<(), Box<dyn Error>
                     tx,
                     block_header,
                     &flaminia_client,
-                    appia,
-                    &appia_client,
                     flaminia,
+                    &appia_client,
+                    appia,
                 )
                 .await
                 {

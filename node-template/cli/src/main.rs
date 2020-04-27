@@ -1,38 +1,44 @@
 use calls::{template, NodeRuntime as Runtime};
-use clap::{App, ArgMatches, SubCommand};
-use rand::RngCore;
+use clap::{App, Arg, ArgMatches, SubCommand};
+use lazy_static::lazy_static;
+// use rand::RngCore;
 use sp_core::{storage::StorageKey, Blake2Hasher, Hasher, H256};
 use sp_finality_grandpa::{AuthorityList, VersionedAuthorityList, GRANDPA_AUTHORITIES_KEY};
 use sp_keyring::AccountKeyring;
+use std::collections::HashMap;
 use std::error::Error;
 use substrate_subxt::{BlockNumber, ClientBuilder};
 
+lazy_static! {
+    static ref ENDPOINTS: HashMap<&'static str, &'static str> = {
+        let mut m = HashMap::new();
+        m.insert("appia", "ws://127.0.0.1:9944");
+        m.insert("flaminia", "ws://127.0.0.1:8844");
+        m
+    };
+}
+
 fn execute(matches: ArgMatches) {
+    let chain = matches.value_of("CHAIN").unwrap();
+    let addr = ENDPOINTS.get(chain).unwrap();
     match matches.subcommand() {
         ("create-client", Some(matches)) => {
-            let addr = matches
-                .value_of("addr")
-                .expect("The address of chain is required; qed");
-            let addr = format!("ws://{}", addr);
-            let counterparty_addr = matches
-                .value_of("counterparty-addr")
-                .expect("The address of counterparty chain is required; qed");
-            let counterparty_addr = format!("ws://{}", counterparty_addr);
             let chain_name = matches
                 .value_of("chain-name")
                 .expect("The name of chain is required; qed");
-            let identifier = Blake2Hasher::hash(chain_name.as_bytes());
+            let identifier = Blake2Hasher::hash(chain.as_bytes());
             println!("identifier: {:?}", identifier);
 
+            let counterparty_addr = ENDPOINTS.get(chain_name).unwrap();
             let result =
                 async_std::task::block_on(create_client(&addr, &counterparty_addr, identifier));
             println!("create_client: {:?}", result);
         }
         ("conn-open-init", Some(matches)) => {
-            let addr = matches
-                .value_of("addr")
-                .expect("The address of chain is required; qed");
-            let addr = format!("ws://{}", addr);
+            if chain != "appia" {
+                println!("CHAIN can only be appia in this demo");
+                return;
+            }
             let client_identifier = matches
                 .value_of("client-identifier")
                 .expect("The identifier of chain is required; qed");
@@ -46,11 +52,20 @@ fn execute(matches: ArgMatches) {
                 hex::decode(counterparty_client_identifier).unwrap();
             let counterparty_client_identifier = H256::from_slice(&counterparty_client_identifier);
 
-            let mut data = [0u8; 32];
-            rand::thread_rng().fill_bytes(&mut data);
-            let identifier = H256::from_slice(&data);
-            rand::thread_rng().fill_bytes(&mut data);
-            let desired_counterparty_connection_identifier = H256::from_slice(&data);
+            // let mut data = [0u8; 32];
+            // rand::thread_rng().fill_bytes(&mut data);
+            // let identifier = H256::from_slice(&data);
+            // rand::thread_rng().fill_bytes(&mut data);
+            // let desired_counterparty_connection_identifier = H256::from_slice(&data);
+
+            let identifier = Blake2Hasher::hash(b"appia-connection");
+            println!("identifier: {:?}", identifier);
+            let desired_counterparty_connection_identifier =
+                Blake2Hasher::hash(b"flaminia-connection");
+            println!(
+                "desired_counterparty_connection_identifier: {:?}",
+                desired_counterparty_connection_identifier
+            );
 
             let result = async_std::task::block_on(conn_open_init(
                 &addr,
@@ -62,10 +77,6 @@ fn execute(matches: ArgMatches) {
             println!("conn_open_init: {:?}", result);
         }
         ("bind-port", Some(matches)) => {
-            let addr = matches
-                .value_of("addr")
-                .expect("The address of chain is required; qed");
-            let addr = format!("ws://{}", addr);
             let identifier = matches
                 .value_of("identifier")
                 .expect("The identifier of port is required; qed");
@@ -76,10 +87,6 @@ fn execute(matches: ArgMatches) {
             println!("bind_port: {:?}", result);
         }
         ("release-port", Some(matches)) => {
-            let addr = matches
-                .value_of("addr")
-                .expect("The address of chain is required; qed");
-            let addr = format!("ws://{}", addr);
             let identifier = matches
                 .value_of("identifier")
                 .expect("The identifier of port is required; qed");
@@ -90,10 +97,10 @@ fn execute(matches: ArgMatches) {
             println!("release_port: {:?}", result);
         }
         ("chan-open-init", Some(matches)) => {
-            let addr = matches
-                .value_of("addr")
-                .expect("The address of chain is required; qed");
-            let addr = format!("ws://{}", addr);
+            if chain != "appia" {
+                println!("CHAIN can only be appia in this demo");
+                return;
+            }
             let unordered = matches.is_present("unordered");
             let connection_identifier = matches
                 .value_of("connection-identifier")
@@ -110,11 +117,19 @@ fn execute(matches: ArgMatches) {
                 .expect("The identifier of counterparty port is required; qed");
             let counterparty_port_identifier = counterparty_port_identifier.as_bytes().to_vec();
 
-            let mut data = [0u8; 32];
-            rand::thread_rng().fill_bytes(&mut data);
-            let channel_identifier = H256::from_slice(&data);
-            rand::thread_rng().fill_bytes(&mut data);
-            let desired_counterparty_channel_identifier = H256::from_slice(&data);
+            // let mut data = [0u8; 32];
+            // rand::thread_rng().fill_bytes(&mut data);
+            // let channel_identifier = H256::from_slice(&data);
+            // rand::thread_rng().fill_bytes(&mut data);
+            // let desired_counterparty_channel_identifier = H256::from_slice(&data);
+
+            let channel_identifier = Blake2Hasher::hash(b"appia-channel");
+            println!("channel_identifier: {:?}", channel_identifier);
+            let desired_counterparty_channel_identifier = Blake2Hasher::hash(b"flaminia-channel");
+            println!(
+                "desired_counterparty_channel_identifier: {:?}",
+                desired_counterparty_channel_identifier
+            );
 
             let result = async_std::task::block_on(chan_open_init(
                 &addr,
@@ -128,10 +143,10 @@ fn execute(matches: ArgMatches) {
             println!("chan_open_init: {:?}", result);
         }
         ("send-packet", Some(matches)) => {
-            let addr = matches
-                .value_of("addr")
-                .expect("The address of chain is required; qed");
-            let addr = format!("ws://{}", addr);
+            if chain != "appia" {
+                println!("CHAIN can only be appia in this demo");
+                return;
+            }
             let sequence = matches
                 .value_of("sequence")
                 .expect("The sequence of packet is required; qed");
@@ -188,12 +203,13 @@ fn main() {
         .author("Cdot Network <ys@cdot.network>")
         .about("cli is a tool for testing IBC protocol")
         .version(env!("CARGO_PKG_VERSION"))
+        .arg(Arg::with_name("CHAIN")
+             .help("Sets the chain to be operated")
+             .required(true))
         .subcommands(vec![SubCommand::with_name("create-client")
             .about("Create a new client")
             .args_from_usage(
                 "
-<addr> 'The address of demo chain'
-<counterparty-addr> 'The address of counterparty demo chain'
 <chain-name> 'The name of counterparty demo chain'
 ",
             )])
@@ -201,7 +217,6 @@ fn main() {
             .about("Open a new connection")
             .args_from_usage(
                 "
-<addr> 'The address of demo chain'
 <client-identifier> 'The client identifier of demo chain'
 <counterparty-client-identifier> 'The client identifier of counterparty demo chain'
 ",
@@ -210,7 +225,6 @@ fn main() {
             .about("Bind module to an unallocated port")
             .args_from_usage(
                 "
-<addr> 'The address of demo chain'
 <identifier> 'The identifier of port'
 ",
             )])
@@ -218,7 +232,6 @@ fn main() {
             .about("Release a port")
             .args_from_usage(
                 "
-<addr> 'The address of demo chain'
 <identifier> 'The identifier of port'
 ",
             )])
@@ -227,7 +240,6 @@ fn main() {
             .args_from_usage(
                 "
 --unordered 'Channel is unordered'
-<addr> 'The address of demo chain'
 <connection-identifier> 'The connection identifier of demo chain'
 <port-identifier> 'The identifier of port'
 <counterparty-port-identifier> 'The identifier of port on counterparty chain'
@@ -237,7 +249,6 @@ fn main() {
             .about("Send an IBC packet")
             .args_from_usage(
                 "
-<addr> 'The address of demo chain'
 <sequence> 'The sequence number corresponds to the order of sends and receives'
 <timeout-height> 'The timeoutHeight indicates a consensus height on the destination chain after which the packet will no longer be processed, and will instead count as having timed-out'
 <source-port> 'The sourcePort identifies the port on the sending chain'
