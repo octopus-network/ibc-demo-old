@@ -13,6 +13,7 @@ use sp_keyring::AccountKeyring;
 use sp_runtime::generic;
 use sp_storage::StorageChangeSet;
 use sp_trie::StorageProof;
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::io::Read;
@@ -21,13 +22,12 @@ use substrate_subxt::{system::System, BlockNumber, Client, ClientBuilder};
 
 #[derive(Debug, Deserialize)]
 struct Config {
-    chains: Vec<ChainConfig>,
+    chains: HashMap<String, ChainConfig>,
     relay: Vec<RelayConfig>,
 }
 
 #[derive(Debug, Deserialize)]
 struct ChainConfig {
-    name: String,
     endpoint: String,
     client_identifier: String,
 }
@@ -48,7 +48,7 @@ fn execute(matches: ArgMatches) {
         .expect("can not read config.toml");
     let config: Config = toml::from_str(&contents).expect("can not parse config.toml");
     println!("config: {:#?}", config);
-    let result = async_std::task::block_on(run("ws://127.0.0.1:9944", "ws://127.0.0.1:8844"));
+    let result = async_std::task::block_on(run(&config));
     println!("run: {:?}", result);
 }
 
@@ -75,7 +75,12 @@ fn main() {
     execute(matches);
 }
 
-async fn run(appia_addr: &str, flaminia_addr: &str) -> Result<(), Box<dyn Error>> {
+async fn run(config: &Config) -> Result<(), Box<dyn Error>> {
+    for task in &config.relay {
+        println!("task: {:?}", task);
+    }
+    let appia_addr = "ws://127.0.0.1:9944";
+    let flaminia_addr = "ws://127.0.0.1:8844";
     let appia_client = ClientBuilder::<Runtime>::new()
         .set_url(appia_addr)
         .build()
