@@ -3768,6 +3768,8 @@ dependencies = [
  "pallet-ibc",
  "parity-scale-codec",
  "sc-rpc-api",
+ "serde",
+ "serde_derive",
  "sp-core",
  "sp-finality-grandpa",
  "sp-keyring",
@@ -3776,6 +3778,7 @@ dependencies = [
  "sp-storage",
  "sp-trie",
  "substrate-subxt",
+ "toml",
  "url 1.7.2",
 ]
 

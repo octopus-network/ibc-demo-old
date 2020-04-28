@@ -2,10 +2,11 @@ use calls::{
     ibc::{self, IbcStore},
     NodeRuntime as Runtime,
 };
-use clap::{App, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use codec::Decode;
 use log::{debug, error, info};
 use pallet_ibc::{ChannelState, ConnectionState, Datagram, Header, Packet};
+use serde_derive::Deserialize;
 use sp_core::{storage::StorageKey, twox_128, Blake2Hasher, Hasher, H256};
 use sp_finality_grandpa::GRANDPA_AUTHORITIES_KEY;
 use sp_keyring::AccountKeyring;
@@ -13,27 +14,42 @@ use sp_runtime::generic;
 use sp_storage::StorageChangeSet;
 use sp_trie::StorageProof;
 use std::error::Error;
+use std::fs::File;
+use std::io::Read;
 use std::sync::mpsc::{channel, Sender};
 use substrate_subxt::{system::System, BlockNumber, Client, ClientBuilder};
+
+#[derive(Debug, Deserialize)]
+struct Config {
+    chains: Vec<ChainConfig>,
+    relay: Vec<RelayConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ChainConfig {
+    name: String,
+    endpoint: String,
+    client_identifier: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct RelayConfig {
+    from: String,
+    to: String,
+}
 
 type EventRecords = Vec<system::EventRecord<node_runtime::Event, <Runtime as System>::Hash>>;
 
 fn execute(matches: ArgMatches) {
-    match matches.subcommand() {
-        ("run", Some(matches)) => {
-            let appia_addr = matches
-                .value_of("appia-addr")
-                .expect("The address of appia chain is required; qed");
-            let appia_addr = format!("ws://{}", appia_addr);
-            let flaminia_addr = matches
-                .value_of("flaminia-addr")
-                .expect("The address of flaminia chain is required; qed");
-            let flaminia_addr = format!("ws://{}", flaminia_addr);
-            let result = async_std::task::block_on(run(&appia_addr, &flaminia_addr));
-            println!("run: {:?}", result);
-        }
-        _ => print_usage(&matches),
-    }
+    let file_path = matches.value_of("config").unwrap();
+    let mut file = File::open(file_path).expect("config.toml not found");
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)
+        .expect("can not read config.toml");
+    let config: Config = toml::from_str(&contents).expect("can not parse config.toml");
+    println!("config: {:#?}", config);
+    let result = async_std::task::block_on(run("ws://127.0.0.1:9944", "ws://127.0.0.1:8844"));
+    println!("run: {:?}", result);
 }
 
 fn print_usage(matches: &ArgMatches) {
@@ -44,16 +60,17 @@ fn main() {
     env_logger::init();
     let matches = App::new("relayer")
         .author("Cdot Network <ys@cdot.network>")
-        .about("Relayer is an off-chain process to relay IBC packets between two demo chains")
+        .about("Relayer is an off-chain process to relay IBC packets between chains")
         .version(env!("CARGO_PKG_VERSION"))
-        .subcommands(vec![SubCommand::with_name("run")
-            .about("Start a relayer process")
-            .args_from_usage(
-                "
-<appia-addr> 'The address of demo chain - Appia'
-<flaminia-addr> 'The address of demo chain - Flaminia'
-",
-            )])
+        .arg(
+            Arg::with_name("config")
+                .short("c")
+                .long("config")
+                .value_name("FILE")
+                .help("Sets a custom config file")
+                .takes_value(true)
+                .required(true),
+        )
         .get_matches();
     execute(matches);
 }
