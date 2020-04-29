@@ -131,7 +131,7 @@ decl_module! {
 			Ok(())
 		}
 
-		#[weight = MINIMUM_WEIGHT]
+		  #[weight = MINIMUM_WEIGHT]
 		pub fn test_conn_open_init(
 			origin,
 			identifier: H256,
@@ -151,7 +151,7 @@ decl_module! {
 			Ok(())
 		}
 
-		#[weight = MINIMUM_WEIGHT]
+		  #[weight = MINIMUM_WEIGHT]
 		pub fn test_bind_port(origin, identifier: Vec<u8>) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
 			let module_index = T::ModuleToIndex::module_to_index::<Self>()
@@ -162,7 +162,7 @@ decl_module! {
 			Ok(())
 		}
 
-		#[weight = MINIMUM_WEIGHT]
+		  #[weight = MINIMUM_WEIGHT]
 		pub fn test_release_port(origin, identifier: Vec<u8>) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
 			let module_index = T::ModuleToIndex::module_to_index::<Self>()
@@ -173,7 +173,7 @@ decl_module! {
 			Ok(())
 		}
 
-		#[weight = MINIMUM_WEIGHT]
+		  #[weight = MINIMUM_WEIGHT]
 		pub fn test_chan_open_init(
 			origin,
 			unordered: bool,
@@ -202,7 +202,7 @@ decl_module! {
 			Ok(())
 		}
 
-		#[weight = MINIMUM_WEIGHT]
+		  #[weight = MINIMUM_WEIGHT]
 		pub fn test_send_packet(
 			origin,
 			sequence: u64,

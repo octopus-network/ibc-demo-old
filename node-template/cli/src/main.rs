@@ -282,7 +282,8 @@ async fn create_client(
     println!("counterparty genesis_header: {:?}", genesis_header);
     let storage_key = StorageKey(GRANDPA_AUTHORITIES_KEY.to_vec());
     let genesis_authorities: AuthorityList = counterparty_client
-        .fetch(storage_key, genesis_hash)
+        .rpc
+        .storage::<VersionedAuthorityList>(storage_key, genesis_hash)
         .await?
         .map(|versioned: VersionedAuthorityList| versioned.into())
         .unwrap();
@@ -295,13 +296,13 @@ async fn create_client(
         .build()
         .await?;
     let xt = client.xt(signer, None).await?;
-    xt.submit(template::test_create_client(
+    xt.submit(template::TestCreateClientCall {
         identifier,
-        0,
-        0,
-        genesis_authorities,
-        genesis_header.state_root,
-    ))
+        height: 0,
+        set_id: 0,
+        authority_list: genesis_authorities,
+        commitment_root: genesis_header.state_root,
+    })
     .await?;
     Ok(())
 }
@@ -319,12 +320,12 @@ async fn conn_open_init(
         .build()
         .await?;
     let xt = client.xt(signer, None).await?;
-    xt.submit(template::test_conn_open_init(
+    xt.submit(template::TestConnOpenInitCall {
         identifier,
         desired_counterparty_connection_identifier,
         client_identifier,
         counterparty_client_identifier,
-    ))
+    })
     .await?;
     Ok(())
 }
@@ -336,7 +337,7 @@ async fn bind_port(addr: &str, identifier: Vec<u8>) -> Result<(), Box<dyn Error>
         .build()
         .await?;
     let xt = client.xt(signer, None).await?;
-    xt.submit(template::test_bind_port(identifier)).await?;
+    xt.submit(template::TestBindPortCall { identifier }).await?;
     Ok(())
 }
 
@@ -347,7 +348,8 @@ async fn release_port(addr: &str, identifier: Vec<u8>) -> Result<(), Box<dyn Err
         .build()
         .await?;
     let xt = client.xt(signer, None).await?;
-    xt.submit(template::test_release_port(identifier)).await?;
+    xt.submit(template::TestReleasePortCall { identifier })
+        .await?;
     Ok(())
 }
 
@@ -366,14 +368,14 @@ async fn chan_open_init(
         .build()
         .await?;
     let xt = client.xt(signer, None).await?;
-    xt.submit(template::test_chan_open_init(
+    xt.submit(template::TestChanOpenInitCall {
         unordered,
         connection_hops,
         port_identifier,
         channel_identifier,
         counterparty_port_identifier,
         counterparty_channel_identifier,
-    ))
+    })
     .await?;
     Ok(())
 }
@@ -394,7 +396,7 @@ async fn send_packet(
         .build()
         .await?;
     let xt = client.xt(signer, None).await?;
-    xt.submit(template::test_send_packet(
+    xt.submit(template::TestSendPacketCall {
         sequence,
         timeout_height,
         source_port,
@@ -402,7 +404,7 @@ async fn send_packet(
         dest_port,
         dest_channel,
         data,
-    ))
+    })
     .await?;
     Ok(())
 }
