@@ -3759,6 +3759,7 @@ dependencies = [
  "env_logger",
  "frame-system",
  "futures 0.3.4",
+ "hex",
  "log",
  "node-template-runtime",
  "pallet-ibc",

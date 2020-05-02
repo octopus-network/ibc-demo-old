@@ -4,7 +4,7 @@ use codec::Decode;
 use log::{debug, error, info};
 use pallet_ibc::{ChannelState, ConnectionState, Datagram, Header, Packet};
 use serde_derive::Deserialize;
-use sp_core::{storage::StorageKey, twox_128, Blake2Hasher, Hasher, H256};
+use sp_core::{storage::StorageKey, twox_128, H256};
 use sp_finality_grandpa::GRANDPA_AUTHORITIES_KEY;
 use sp_keyring::AccountKeyring;
 use sp_runtime::generic;
@@ -15,6 +15,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 use std::sync::mpsc::{channel, Sender};
+use std::time::Duration;
 use substrate_subxt::{system::System, BlockNumber, Client, ClientBuilder, Store};
 
 #[derive(Debug, Deserialize)]
@@ -75,136 +76,87 @@ fn main() {
 async fn run(config: &Config) -> Result<(), Box<dyn Error>> {
     for task in &config.relay {
         println!("task: {:?}", task);
-    }
-    let appia_addr = "ws://127.0.0.1:9944";
-    let flaminia_addr = "ws://127.0.0.1:8844";
-    let appia_client = ClientBuilder::<Runtime>::new()
-        .set_url(appia_addr)
-        .build()
-        .await?;
-    let flaminia_client = ClientBuilder::<Runtime>::new()
-        .set_url(flaminia_addr)
-        .build()
-        .await?;
+        let from = task.from.clone();
+        let from_endpoint = &config.chains[&from].endpoint;
+        let from_client_identifier = &config.chains[&from].client_identifier;
+        let from_client_identifier = hex::decode(from_client_identifier).unwrap();
+        let from_client_identifier = H256::from_slice(&from_client_identifier);
+        let to = task.to.clone();
+        let to_endpoint = &config.chains[&to].endpoint;
+        let to_client_identifier = &config.chains[&to].client_identifier;
+        let to_client_identifier = hex::decode(to_client_identifier).unwrap();
+        let to_client_identifier = H256::from_slice(&to_client_identifier);
 
-    let mut appia_block_headers = appia_client.subscribe_finalized_blocks().await?;
-    let mut flaminia_block_headers = flaminia_client.subscribe_finalized_blocks().await?;
+        let from_client = ClientBuilder::<Runtime>::new()
+            .set_url(from_endpoint)
+            .build()
+            .await?;
+        let to_client = ClientBuilder::<Runtime>::new()
+            .set_url(to_endpoint)
+            .build()
+            .await?;
 
-    let appia = Blake2Hasher::hash(b"appia");
-    let flaminia = Blake2Hasher::hash(b"flaminia");
+        let mut from_block_headers = from_client.subscribe_finalized_blocks().await?;
 
-    let (tx1, rx1) = channel();
-    let (tx2, rx2) = channel();
+        let (tx, rx) = channel();
 
-    {
-        let appia_client = appia_client.clone();
-        let flaminia_client = flaminia_client.clone();
-        async_std::task::spawn(async move {
-            loop {
-                let block_header = appia_block_headers.next().await;
-                let tx = tx1.clone();
-                if let Err(e) = relay(
-                    "appia",
-                    tx,
-                    block_header,
-                    &appia_client,
-                    appia,
-                    &flaminia_client,
-                    flaminia,
-                )
-                .await
-                {
-                    error!("[appia] failed to relay; error = {}", e);
+        let from_client = from_client.clone();
+        {
+            let to_client = to_client.clone();
+            async_std::task::spawn(async move {
+                loop {
+                    let block_header = from_block_headers.next().await;
+                    let tx = tx.clone();
+                    if let Err(e) = relay(
+                        &from,
+                        tx,
+                        block_header,
+                        &from_client,
+                        from_client_identifier,
+                        &to_client,
+                        to_client_identifier,
+                    )
+                    .await
+                    {
+                        error!("[{}] failed to relay; error = {}", from, e);
+                    }
                 }
-            }
-        });
-    }
-
-    {
-        let appia_client = appia_client.clone();
-        let flaminia_client = flaminia_client.clone();
-        async_std::task::spawn(async move {
-            loop {
-                let block_header = flaminia_block_headers.next().await;
-                let tx = tx2.clone();
-                if let Err(e) = relay(
-                    "flaminia",
-                    tx,
-                    block_header,
-                    &flaminia_client,
-                    flaminia,
-                    &appia_client,
-                    appia,
-                )
-                .await
-                {
-                    error!("[flaminia] failed to relay; error = {}", e);
-                }
-            }
-        });
-    }
-
-    async_std::task::spawn(async move {
-        let signer = AccountKeyring::Alice.pair();
-        let mut xt = flaminia_client.xt(signer, None).await.unwrap();
-        let mut first = true;
-        loop {
-            let datagram = rx1.recv().unwrap();
-            match datagram {
-                Datagram::ClientUpdate { .. } => {
-                    debug!("[relayer => flaminia] datagram: {:?}", datagram)
-                }
-                _ => debug!("[relayer => flaminia] datagram: {:#?}", datagram),
-            }
-            if first {
-                if let Err(e) = xt.submit(ibc::SubmitDatagramCall { datagram }).await {
-                    error!(
-                        "[relayer => flaminia] failed to send datagram; error = {}",
-                        e
-                    );
-                }
-                first = false;
-                continue;
-            }
-            if let Err(e) = xt
-                .increment_nonce()
-                .submit(ibc::SubmitDatagramCall { datagram })
-                .await
-            {
-                error!(
-                    "[relayer => flaminia] failed to send datagram; error = {}",
-                    e
-                );
-            }
+            });
         }
-    });
+
+        async_std::task::spawn(async move {
+            let signer = AccountKeyring::Alice.pair();
+            let mut xt = to_client.xt(signer, None).await.unwrap();
+            let mut first = true;
+            loop {
+                let datagram = rx.recv().unwrap();
+                match datagram {
+                    Datagram::ClientUpdate { .. } => {
+                        debug!("[relayer => {}] datagram: {:?}", to, datagram)
+                    }
+                    _ => debug!("[relayer => {}] datagram: {:#?}", to, datagram),
+                }
+                if first {
+                    if let Err(e) = xt.submit(ibc::SubmitDatagramCall { datagram }).await {
+                        error!("[relayer => {}] failed to send datagram; error = {}", to, e);
+                    }
+                    first = false;
+                    continue;
+                }
+                if let Err(e) = xt
+                    .increment_nonce()
+                    .submit(ibc::SubmitDatagramCall { datagram })
+                    .await
+                {
+                    error!("[relayer => {}] failed to send datagram; error = {}", to, e);
+                }
+            }
+        });
+    }
 
     async_std::task::block_on(async move {
-        let signer = AccountKeyring::Alice.pair();
-        let mut xt = appia_client.xt(signer, None).await.unwrap();
-        let mut first = true;
         loop {
-            let datagram = rx2.recv().unwrap();
-            match datagram {
-                Datagram::ClientUpdate { .. } => {
-                    debug!("[relayer => appia] datagram: {:?}", datagram)
-                }
-                _ => debug!("[relayer => appia] datagram: {:#?}", datagram),
-            }
-            if first {
-                if let Err(e) = xt.submit(ibc::SubmitDatagramCall { datagram }).await {
-                    error!("[relayer => appia] failed to send datagram; error = {}", e);
-                }
-                first = false;
-                continue;
-            }
-            if let Err(e) = xt
-                .increment_nonce()
-                .submit(ibc::SubmitDatagramCall { datagram })
-                .await
-            {
-                error!("[relayer => appia] failed to send datagram; error = {}", e);
-            }
+            async_std::task::sleep(Duration::from_secs(60 * 60)).await;
         }
     });
 
