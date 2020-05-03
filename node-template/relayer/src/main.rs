@@ -78,14 +78,15 @@ async fn run(config: &Config) -> Result<(), Box<dyn Error>> {
         println!("task: {:?}", task);
         let from = task.from.clone();
         let from_endpoint = &config.chains[&from].endpoint;
-        let from_client_identifier = &config.chains[&from].client_identifier;
-        let from_client_identifier = hex::decode(from_client_identifier).unwrap();
-        let from_client_identifier = H256::from_slice(&from_client_identifier);
+        let from_client_identifier = hex::decode(&config.chains[&from].client_identifier)
+            .and_then(|identifier| Ok(H256::from_slice(&identifier)))
+            .unwrap();
+
         let to = task.to.clone();
         let to_endpoint = &config.chains[&to].endpoint;
-        let to_client_identifier = &config.chains[&to].client_identifier;
-        let to_client_identifier = hex::decode(to_client_identifier).unwrap();
-        let to_client_identifier = H256::from_slice(&to_client_identifier);
+        let to_client_identifier = hex::decode(&config.chains[&to].client_identifier)
+            .and_then(|identifier| Ok(H256::from_slice(&identifier)))
+            .unwrap();
 
         let from_client = ClientBuilder::<Runtime>::new()
             .set_url(from_endpoint)

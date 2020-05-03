@@ -6,16 +6,14 @@ authors = ["Yuanchao Sun <ys@cdot.network>"]
 edition = "2018"
 
 [dependencies]
+async-std = "1.4.0"
 clap = "2.33.0"
 hex = "0.4.0"
-# rand = "0.7.2"
-futures = "0.3"
-async-std = "1.4.0"
 lazy_static = "1.4.0"
-substrate-subxt = { path = "../../substrate-subxt" }
+# rand = "0.7.2"
+
 calls = { path = "../calls" }
 sp-core = { path = "../../substrate/primitives/core" }
 sp-finality-grandpa = { path = "../../substrate/primitives/finality-grandpa" }
 sp-keyring = { path = "../../substrate/primitives/keyring" }
-sp-rpc = { path = "../../substrate/primitives/rpc" }
-node-runtime = { path = "../runtime", package = "node-template-runtime" }
+substrate-subxt = { path = "../../substrate-subxt" }

@@ -6,12 +6,12 @@ edition = "2018"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "1.2.0", default-features = false, features = ["derive", "full"] }
-substrate-subxt = { path = "../../substrate-subxt" }
+
+frame-system = { path = "../../substrate/frame/system" }
 node-runtime = { path = "../../node-template/runtime", package = "node-template-runtime" }
+pallet-balances = { path = "../../substrate/frame/balances" }
+pallet-ibc = { path = "../pallets/ibc" }
 sp-core = { path = "../../substrate/primitives/core" }
 sp-finality-grandpa = { path = "../../substrate/primitives/finality-grandpa" }
 sp-runtime = { path = "../../substrate/primitives/runtime" }
-frame-system = { path = "../../substrate/frame/system" }
-pallet-balances = { path = "../../substrate/frame/balances" }
-pallet-indices = { path = "../../substrate/frame/indices" }
-pallet-ibc = { path = "../pallets/ibc" }
+substrate-subxt = { path = "../../substrate-subxt" }
