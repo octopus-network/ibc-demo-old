@@ -885,6 +885,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "finality-grandpa"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ab32971efbe776e46bfbc34d5b662d8e1de51fd14e26a2eba522c0f3470fc0f"
+dependencies = [
+ "either",
+ "futures 0.3.4",
+ "futures-timer 2.0.2",
+ "log",
+ "num-traits 0.2.11",
+ "parity-scale-codec",
+ "parking_lot 0.9.0",
+]
+
+[[package]]
 name = "fixed-hash"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2609,8 +2624,8 @@ dependencies = [
  "node-template-runtime",
  "sc-basic-authorship",
  "sc-cli",
- "sc-client",
  "sc-client-api",
+ "sc-consensus",
  "sc-consensus-aura",
  "sc-executor",
  "sc-finality-grandpa",
@@ -2874,7 +2889,7 @@ dependencies = [
 name = "pallet-ibc"
 version = "0.1.0"
 dependencies = [
- "finality-grandpa",
+ "finality-grandpa 0.11.2",
  "frame-support",
  "frame-system",
  "hash-db",
@@ -3529,7 +3544,7 @@ dependencies = [
  "rand_isaac",
  "rand_jitter",
  "rand_os",
- "rand_pcg",
+ "rand_pcg 0.1.2",
  "rand_xorshift",
  "winapi 0.3.8",
 ]
@@ -3545,6 +3560,7 @@ dependencies = [
  "rand_chacha 0.2.2",
  "rand_core 0.5.1",
  "rand_hc 0.2.0",
+ "rand_pcg 0.2.1",
 ]
 
 [[package]]
@@ -3651,6 +3667,15 @@ checksum = "abf9b09b01790cfe0364f52bf32995ea3c39f4d2dd011eac241d2914146d0b44"
 dependencies = [
  "autocfg 0.1.7",
  "rand_core 0.4.2",
+]
+
+[[package]]
+name = "rand_pcg"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16abd0c1b639e9eb4d7c50c0b8100b0d0f849be2349829c740fe8e6eb4816429"
+dependencies = [
+ "rand_core 0.5.1",
 ]
 
 [[package]]
@@ -4015,42 +4040,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-client"
-version = "0.8.0-dev"
-dependencies = [
- "derive_more",
- "fnv",
- "futures 0.3.4",
- "hash-db",
- "hex-literal",
- "kvdb",
- "log",
- "parity-scale-codec",
- "parking_lot 0.10.2",
- "rand 0.7.3",
- "sc-block-builder",
- "sc-client-api",
- "sc-executor",
- "sc-telemetry",
- "sp-api",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-database",
- "sp-externalities",
- "sp-inherents",
- "sp-keyring",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
- "sp-trie",
- "sp-utils",
- "sp-version",
- "substrate-prometheus-endpoint",
- "tracing",
-]
-
-[[package]]
 name = "sc-client-api"
 version = "2.0.0-dev"
 dependencies = [
@@ -4070,6 +4059,7 @@ dependencies = [
  "sp-blockchain",
  "sp-consensus",
  "sp-core",
+ "sp-database",
  "sp-externalities",
  "sp-inherents",
  "sp-keyring",
@@ -4099,7 +4089,6 @@ dependencies = [
  "parity-scale-codec",
  "parity-util-mem",
  "parking_lot 0.10.2",
- "sc-client",
  "sc-client-api",
  "sc-executor",
  "sc-state-db",
@@ -4114,6 +4103,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "sc-consensus"
+version = "0.8.0-dev"
+dependencies = [
+ "sc-client-api",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-runtime",
+]
+
+[[package]]
 name = "sc-consensus-aura"
 version = "0.8.0-dev"
 dependencies = [
@@ -4124,7 +4123,6 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.10.2",
  "sc-block-builder",
- "sc-client",
  "sc-client-api",
  "sc-consensus-slots",
  "sc-keystore",
@@ -4224,7 +4222,8 @@ name = "sc-finality-grandpa"
 version = "0.8.0-dev"
 dependencies = [
  "assert_matches",
- "finality-grandpa",
+ "derive_more",
+ "finality-grandpa 0.12.1",
  "fork-tree",
  "futures 0.3.4",
  "futures-timer 3.0.2",
@@ -4234,8 +4233,8 @@ dependencies = [
  "pin-project",
  "rand 0.7.3",
  "sc-block-builder",
- "sc-client",
  "sc-client-api",
+ "sc-consensus",
  "sc-keystore",
  "sc-network",
  "sc-network-gossip",
@@ -4313,7 +4312,6 @@ dependencies = [
  "prost-build",
  "rand 0.7.3",
  "sc-block-builder",
- "sc-client",
  "sc-client-api",
  "sc-peerset",
  "serde",
@@ -4401,7 +4399,6 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.10.2",
  "sc-block-builder",
- "sc-client",
  "sc-client-api",
  "sc-executor",
  "sc-keystore",
@@ -4467,6 +4464,7 @@ dependencies = [
  "futures 0.1.29",
  "futures 0.3.4",
  "futures-timer 3.0.2",
+ "hash-db",
  "lazy_static",
  "log",
  "netstat2",
@@ -4476,8 +4474,9 @@ dependencies = [
  "parking_lot 0.10.2",
  "pin-project",
  "procfs",
+ "rand 0.7.3",
+ "sc-block-builder",
  "sc-chain-spec",
- "sc-client",
  "sc-client-api",
  "sc-client-db",
  "sc-executor",
@@ -4494,14 +4493,19 @@ dependencies = [
  "slog",
  "sp-api",
  "sp-application-crypto",
+ "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
  "sp-core",
+ "sp-externalities",
  "sp-io",
  "sp-runtime",
  "sp-session",
+ "sp-state-machine",
  "sp-transaction-pool",
+ "sp-trie",
  "sp-utils",
+ "sp-version",
  "substrate-prometheus-endpoint",
  "sysinfo",
  "tracing",
@@ -4991,7 +4995,6 @@ version = "0.8.0-dev"
 dependencies = [
  "derive_more",
  "futures 0.3.4",
- "futures-diagnose",
  "futures-timer 3.0.2",
  "libp2p",
  "log",
@@ -5108,6 +5111,7 @@ name = "sp-externalities"
 version = "0.8.0-dev"
 dependencies = [
  "environmental",
+ "parity-scale-codec",
  "sp-std",
  "sp-storage",
 ]
@@ -5178,6 +5182,7 @@ name = "sp-offchain"
 version = "2.0.0-dev"
 dependencies = [
  "sp-api",
+ "sp-core",
  "sp-runtime",
 ]
 

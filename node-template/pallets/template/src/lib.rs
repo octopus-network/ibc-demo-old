@@ -10,7 +10,6 @@
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 
 use frame_support::{decl_module, decl_storage, decl_event, decl_error, dispatch, traits::ModuleToIndex};
-use frame_support::weights::MINIMUM_WEIGHT;
 use frame_system::{self as system, ensure_signed};
 use sp_core::H256;
 use sp_finality_grandpa::{AuthorityList, SetId};
@@ -79,7 +78,7 @@ decl_module! {
 		/// Just a dummy entry point.
 		/// function that can be called by the external world as an extrinsics call
 		/// takes a parameter of the type `AccountId`, stores it, and emits an event
-		#[weight = MINIMUM_WEIGHT]
+		#[weight = 0]
 		pub fn do_something(origin, something: u32) -> dispatch::DispatchResult {
 			// Check it was signed and get the signer. See also: ensure_root and ensure_none
 			let who = ensure_signed(origin)?;
@@ -95,7 +94,7 @@ decl_module! {
 
 		/// Another dummy entry point.
 		/// takes no parameters, attempts to increment storage value, and possibly throws an error
-		#[weight = MINIMUM_WEIGHT]
+		#[weight = 0]
 		pub fn cause_error(origin) -> dispatch::DispatchResult {
 			// Check it was signed and get the signer. See also: ensure_root and ensure_none
 			let _who = ensure_signed(origin)?;
@@ -110,7 +109,7 @@ decl_module! {
 			}
 		}
 
-		#[weight = MINIMUM_WEIGHT]
+		#[weight = 0]
 		pub fn test_create_client(
 			origin,
 			identifier: H256,
@@ -131,7 +130,7 @@ decl_module! {
 			Ok(())
 		}
 
-		  #[weight = MINIMUM_WEIGHT]
+		#[weight = 0]
 		pub fn test_conn_open_init(
 			origin,
 			identifier: H256,
@@ -151,7 +150,7 @@ decl_module! {
 			Ok(())
 		}
 
-		  #[weight = MINIMUM_WEIGHT]
+		#[weight = 0]
 		pub fn test_bind_port(origin, identifier: Vec<u8>) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
 			let module_index = T::ModuleToIndex::module_to_index::<Self>()
@@ -162,7 +161,7 @@ decl_module! {
 			Ok(())
 		}
 
-		  #[weight = MINIMUM_WEIGHT]
+		#[weight = 0]
 		pub fn test_release_port(origin, identifier: Vec<u8>) -> dispatch::DispatchResult {
 			let _who = ensure_signed(origin)?;
 			let module_index = T::ModuleToIndex::module_to_index::<Self>()
@@ -173,7 +172,7 @@ decl_module! {
 			Ok(())
 		}
 
-		  #[weight = MINIMUM_WEIGHT]
+		#[weight = 0]
 		pub fn test_chan_open_init(
 			origin,
 			unordered: bool,
@@ -202,7 +201,7 @@ decl_module! {
 			Ok(())
 		}
 
-		  #[weight = MINIMUM_WEIGHT]
+		#[weight = 0]
 		pub fn test_send_packet(
 			origin,
 			sequence: u64,
