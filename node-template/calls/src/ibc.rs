@@ -1,121 +1,62 @@
 //! Implements support for the pallet_ibc module.
 use codec::Encode;
-use sp_core::{storage::StorageKey, H256};
-use substrate_subxt::{balances::Balances, system::System, Call, Metadata, MetadataError, Store};
+use core::marker::PhantomData;
+use sp_core::H256;
+use substrate_subxt::{
+    balances::{Balances, BalancesEventsDecoder},
+    module,
+    system::{System, SystemEventsDecoder},
+    Call, Store,
+};
 
 /// The subset of the `pallet_ibc::Trait` that a client must implement.
+#[module]
 pub trait Ibc: System + Balances {}
 
-const MODULE: &str = "Ibc";
-
-#[derive(Encode)]
-pub struct Clients<T>(pub H256, pub core::marker::PhantomData<T>);
-
-impl<T: Ibc> Store<T> for Clients<T> {
-    const MODULE: &'static str = MODULE;
-    const FIELD: &'static str = "Clients";
-    type Returns = pallet_ibc::ClientState;
-
-    fn key(&self, metadata: &Metadata) -> Result<StorageKey, MetadataError> {
-        Ok(metadata
-            .module(Self::MODULE)?
-            .storage(Self::FIELD)?
-            .map()?
-            .key(&self.0))
-    }
+#[derive(Encode, Store)]
+pub struct ClientsStore<T: Ibc> {
+    #[store(returns = pallet_ibc::ClientState)]
+    pub key: H256,
+    pub _runtime: PhantomData<T>,
 }
 
-#[derive(Encode)]
-pub struct ConsensusStates<T>(pub (H256, u32), pub core::marker::PhantomData<T>);
-
-impl<T: Ibc> Store<T> for ConsensusStates<T> {
-    const MODULE: &'static str = MODULE;
-    const FIELD: &'static str = "ConsensusStates";
-    type Returns = pallet_ibc::ConsensusState;
-
-    fn key(&self, metadata: &Metadata) -> Result<StorageKey, MetadataError> {
-        Ok(metadata
-            .module(Self::MODULE)?
-            .storage(Self::FIELD)?
-            .map()?
-            .key(&self.0))
-    }
+#[derive(Encode, Store)]
+pub struct ConsensusStatesStore<T: Ibc> {
+    #[store(returns = pallet_ibc::ConsensusState)]
+    pub key: (H256, u32),
+    pub _runtime: PhantomData<T>,
 }
 
-#[derive(Encode)]
-pub struct Connections<T>(pub H256, pub core::marker::PhantomData<T>);
-
-impl<T: Ibc> Store<T> for Connections<T> {
-    const MODULE: &'static str = MODULE;
-    const FIELD: &'static str = "Connections";
-    type Returns = pallet_ibc::ConnectionEnd;
-
-    fn key(&self, metadata: &Metadata) -> Result<StorageKey, MetadataError> {
-        Ok(metadata
-            .module(Self::MODULE)?
-            .storage(Self::FIELD)?
-            .map()?
-            .key(&self.0))
-    }
+#[derive(Encode, Store)]
+pub struct ConnectionsStore<T: Ibc> {
+    #[store(returns = pallet_ibc::ConnectionEnd)]
+    pub key: H256,
+    pub _runtime: PhantomData<T>,
 }
 
-#[derive(Encode)]
-pub struct Channels<T>(pub (Vec<u8>, H256), pub core::marker::PhantomData<T>);
-
-impl<T: Ibc> Store<T> for Channels<T> {
-    const MODULE: &'static str = MODULE;
-    const FIELD: &'static str = "Channels";
-    type Returns = pallet_ibc::ChannelEnd;
-
-    fn key(&self, metadata: &Metadata) -> Result<StorageKey, MetadataError> {
-        Ok(metadata
-            .module(Self::MODULE)?
-            .storage(Self::FIELD)?
-            .map()?
-            .key(&self.0))
-    }
+#[derive(Encode, Store)]
+pub struct ChannelsStore<T: Ibc> {
+    #[store(returns = pallet_ibc::ChannelEnd)]
+    pub key: (Vec<u8>, H256),
+    pub _runtime: PhantomData<T>,
 }
 
-#[derive(Encode)]
-pub struct Packets<T>(pub (Vec<u8>, H256, u64), pub core::marker::PhantomData<T>);
-
-impl<T: Ibc> Store<T> for Packets<T> {
-    const MODULE: &'static str = MODULE;
-    const FIELD: &'static str = "Packets";
-    type Returns = H256;
-
-    fn key(&self, metadata: &Metadata) -> Result<StorageKey, MetadataError> {
-        Ok(metadata
-            .module(Self::MODULE)?
-            .storage(Self::FIELD)?
-            .map()?
-            .key(&self.0))
-    }
+#[derive(Encode, Store)]
+pub struct PacketsStore<T: Ibc> {
+    #[store(returns = H256)]
+    pub key: (Vec<u8>, H256, u64),
+    pub _runtime: PhantomData<T>,
 }
 
-#[derive(Encode)]
-pub struct Acknowledgements<T>(pub (Vec<u8>, H256, u64), pub core::marker::PhantomData<T>);
-
-impl<T: Ibc> Store<T> for Acknowledgements<T> {
-    const MODULE: &'static str = MODULE;
-    const FIELD: &'static str = "Acknowledgements";
-    type Returns = H256;
-
-    fn key(&self, metadata: &Metadata) -> Result<StorageKey, MetadataError> {
-        Ok(metadata
-            .module(Self::MODULE)?
-            .storage(Self::FIELD)?
-            .map()?
-            .key(&self.0))
-    }
+#[derive(Encode, Store)]
+pub struct AcknowledgementsStore<T: Ibc> {
+    #[store(returns = H256)]
+    pub key: (Vec<u8>, H256, u64),
+    pub _runtime: PhantomData<T>,
 }
 
-#[derive(Encode)]
-pub struct SubmitDatagramCall {
+#[derive(Encode, Call)]
+pub struct SubmitDatagramCall<T: Ibc> {
+    pub _runtime: PhantomData<T>,
     pub datagram: pallet_ibc::Datagram,
-}
-
-impl<T: Ibc> Call<T> for SubmitDatagramCall {
-    const MODULE: &'static str = MODULE;
-    const FUNCTION: &'static str = "submit_datagram";
 }

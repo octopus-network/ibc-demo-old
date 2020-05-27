@@ -1,4 +1,7 @@
-use calls::{ibc, NodeRuntime as Runtime};
+use calls::{
+    ibc::{self, ChannelsStoreExt, ClientsStoreExt, ConnectionsStoreExt, SubmitDatagramCallExt},
+    NodeRuntime as Runtime,
+};
 use clap::{App, Arg, ArgMatches};
 use codec::Decode;
 use log::{debug, error, info};
@@ -16,7 +19,10 @@ use std::fs::File;
 use std::io::Read;
 use std::sync::mpsc::{channel, Sender};
 use std::time::Duration;
-use substrate_subxt::{system::System, BlockNumber, Client, ClientBuilder, Store};
+use substrate_subxt::{
+    system::{AccountStoreExt, System},
+    BlockNumber, Client, ClientBuilder, PairSigner, Store,
+};
 
 #[derive(Debug, Deserialize)]
 struct Config {
@@ -126,9 +132,13 @@ async fn run(config: &Config) -> Result<(), Box<dyn Error>> {
         }
 
         async_std::task::spawn(async move {
-            let signer = AccountKeyring::Alice.pair();
-            let mut xt = to_client.xt(signer, None).await.unwrap();
-            let mut first = true;
+            let mut signer = PairSigner::new(AccountKeyring::Alice.pair());
+            let nonce = to_client
+                .account(&AccountKeyring::Alice.to_account_id())
+                .await
+                .unwrap()
+                .nonce;
+            signer.set_nonce(nonce);
             loop {
                 let datagram = rx.recv().unwrap();
                 match datagram {
@@ -137,20 +147,10 @@ async fn run(config: &Config) -> Result<(), Box<dyn Error>> {
                     }
                     _ => debug!("[relayer => {}] datagram: {:#?}", to, datagram),
                 }
-                if first {
-                    if let Err(e) = xt.submit(ibc::SubmitDatagramCall { datagram }).await {
-                        error!("[relayer => {}] failed to send datagram; error = {}", to, e);
-                    }
-                    first = false;
-                    continue;
-                }
-                if let Err(e) = xt
-                    .increment_nonce()
-                    .submit(ibc::SubmitDatagramCall { datagram })
-                    .await
-                {
+                if let Err(e) = to_client.submit_datagram(&signer, datagram).await {
                     error!("[relayer => {}] failed to send datagram; error = {}", to, e);
                 }
+                signer.increment_nonce();
             }
         });
     }
@@ -184,12 +184,12 @@ async fn relay(
     debug!("[{}] state_root: {:?}", chain_name, state_root);
     debug!("[{}] block_hash: {:?}", chain_name, block_hash);
     let client_state = client
-        .fetch(
-            ibc::Clients(client_identifier, Default::default()),
-            Some(block_hash),
+        .clients(
+            client_identifier,
+            //           Some(block_hash)
         )
-        .await?
-        .unwrap();
+        .await?;
+
     let counterparty_block_hash = counterparty_client
         .block_hash(Some(BlockNumber::from(client_state.latest_height)))
         .await?;
@@ -198,12 +198,8 @@ async fn relay(
         chain_name, client_state.latest_height
     );
     let counterparty_client_state = counterparty_client
-        .fetch(
-            ibc::Clients(counterparty_client_identifier, Default::default()),
-            None,
-        )
-        .await?
-        .unwrap();
+        .clients(counterparty_client_identifier)
+        .await?;
     if counterparty_client_state.latest_height < block_number {
         for height in counterparty_client_state.latest_height + 1..=block_number {
             let hash = client.block_hash(Some(BlockNumber::from(height))).await?;
@@ -241,23 +237,18 @@ async fn relay(
     }
     for connection in client_state.connections.iter() {
         let connection_end = client
-            .fetch(
-                ibc::Connections(*connection, Default::default()),
-                Some(block_hash),
+            .connections(
+                *connection,
+                // Some(block_hash),
             )
-            .await?
-            .unwrap();
+            .await?;
         debug!("[{}] connection_end: {:#?}", chain_name, connection_end);
         let remote_connection_end = counterparty_client
-            .fetch(
-                ibc::Connections(
-                    connection_end.counterparty_connection_identifier,
-                    Default::default(),
-                ),
-                counterparty_block_hash,
+            .connections(
+                connection_end.counterparty_connection_identifier,
+                // counterparty_block_hash,
             )
-            .await?
-            .unwrap();
+            .await?;
         debug!(
             "[{}] remote_connection_end: {:#?}",
             chain_name, remote_connection_end
@@ -270,14 +261,17 @@ async fn relay(
         if connection_end.state == ConnectionState::Init
             && remote_connection_end.state == ConnectionState::None
         {
-            let key = ibc::ConsensusStates::<Runtime>(
-                (client_identifier, block_number),
-                Default::default(),
-            )
-            .key(&client.metadata())?;
+            let consensus_states = ibc::ConsensusStatesStore::<Runtime> {
+                key: (client_identifier, block_number),
+                _runtime: Default::default(),
+            };
+            let key = consensus_states.key(&client.metadata())?;
             let proof_consensus = client.read_proof(vec![key], Some(block_hash)).await?;
-            let key = ibc::Connections::<Runtime>(*connection, Default::default())
-                .key(&client.metadata())?;
+            let connections = ibc::ConnectionsStore::<Runtime> {
+                key: *connection,
+                _runtime: Default::default(),
+            };
+            let key = connections.key(&client.metadata())?;
             let proof_init = client.read_proof(vec![key], Some(block_hash)).await?;
             let datagram = Datagram::ConnOpenTry {
                 desired_identifier: connection_end.counterparty_connection_identifier,
@@ -297,8 +291,11 @@ async fn relay(
         } else if connection_end.state == ConnectionState::TryOpen
             && remote_connection_end.state == ConnectionState::Init
         {
-            let key = ibc::Connections::<Runtime>(*connection, Default::default())
-                .key(&client.metadata())?;
+            let connections = ibc::ConnectionsStore::<Runtime> {
+                key: *connection,
+                _runtime: Default::default(),
+            };
+            let key = connections.key(&client.metadata())?;
             let proof_try = client.read_proof(vec![key], Some(block_hash)).await?;
             let datagram = Datagram::ConnOpenAck {
                 identifier: connection_end.counterparty_connection_identifier,
@@ -312,8 +309,11 @@ async fn relay(
         } else if connection_end.state == ConnectionState::Open
             && remote_connection_end.state == ConnectionState::TryOpen
         {
-            let key = ibc::Connections::<Runtime>(*connection, Default::default())
-                .key(&client.metadata())?;
+            let connections = ibc::ConnectionsStore::<Runtime> {
+                key: *connection,
+                _runtime: Default::default(),
+            };
+            let key = connections.key(&client.metadata())?;
             let proof_ack = client.read_proof(vec![key], Some(block_hash)).await?;
             let datagram = Datagram::ConnOpenConfirm {
                 identifier: connection_end.counterparty_connection_identifier,
@@ -328,27 +328,22 @@ async fn relay(
     }
     for channel in client_state.channels.iter() {
         let channel_end = client
-            .fetch(
-                ibc::Channels(channel.clone(), Default::default()),
-                Some(block_hash),
+            .channels(
+                channel.clone(),
+                // Some(block_hash),
             )
-            .await?
-            .unwrap();
+            .await?;
 
         debug!("[{}] channel_end: {:#?}", chain_name, channel_end);
         let remote_channel_end = counterparty_client
-            .fetch(
-                ibc::Channels(
-                    (
-                        channel_end.counterparty_port_identifier.clone(),
-                        channel_end.counterparty_channel_identifier,
-                    ),
-                    Default::default(),
+            .channels(
+                (
+                    channel_end.counterparty_port_identifier.clone(),
+                    channel_end.counterparty_channel_identifier,
                 ),
-                counterparty_block_hash,
+                // counterparty_block_hash,
             )
-            .await?
-            .unwrap();
+            .await?;
         debug!(
             "[{}] remote_channel_end: {:#?}",
             chain_name, remote_channel_end
@@ -360,14 +355,16 @@ async fn relay(
         if channel_end.state == ChannelState::Init && remote_channel_end.state == ChannelState::None
         {
             let connection_end = client
-                .fetch(
-                    ibc::Connections(channel_end.connection_hops[0], Default::default()),
-                    Some(block_hash),
+                .connections(
+                    channel_end.connection_hops[0],
+                    // Some(block_hash),
                 )
-                .await?
-                .unwrap();
-            let key = ibc::Channels::<Runtime>(channel.clone(), Default::default())
-                .key(&client.metadata())?;
+                .await?;
+            let channels = ibc::ChannelsStore::<Runtime> {
+                key: channel.clone(),
+                _runtime: Default::default(),
+            };
+            let key = channels.key(&client.metadata())?;
             let proof_init = client.read_proof(vec![key], Some(block_hash)).await?;
             let datagram = Datagram::ChanOpenTry {
                 order: channel_end.ordering,
@@ -386,8 +383,11 @@ async fn relay(
         } else if channel_end.state == ChannelState::TryOpen
             && remote_channel_end.state == ChannelState::Init
         {
-            let key = ibc::Channels::<Runtime>(channel.clone(), Default::default())
-                .key(&client.metadata())?;
+            let channels = ibc::ChannelsStore::<Runtime> {
+                key: channel.clone(),
+                _runtime: Default::default(),
+            };
+            let key = channels.key(&client.metadata())?;
             let proof_try = client.read_proof(vec![key], Some(block_hash)).await?;
             let datagram = Datagram::ChanOpenAck {
                 port_identifier: channel_end.counterparty_port_identifier,
@@ -400,8 +400,11 @@ async fn relay(
         } else if channel_end.state == ChannelState::Open
             && remote_channel_end.state == ChannelState::TryOpen
         {
-            let key = ibc::Channels::<Runtime>(channel.clone(), Default::default())
-                .key(&client.metadata())?;
+            let channels = ibc::ChannelsStore::<Runtime> {
+                key: channel.clone(),
+                _runtime: Default::default(),
+            };
+            let key = channels.key(&client.metadata())?;
             let proof_ack = client.read_proof(vec![key], Some(block_hash)).await?;
             let datagram = Datagram::ChanOpenConfirm {
                 port_identifier: channel_end.counterparty_port_identifier,
@@ -447,11 +450,11 @@ async fn relay(
                     dest_channel,
                     data,
                 };
-                let key = ibc::Packets::<Runtime>(
-                    (source_port, source_channel, timeout_height.into()),
-                    Default::default(),
-                )
-                .key(&client.metadata())?;
+                let packets = ibc::PacketsStore::<Runtime> {
+                    key: (source_port, source_channel, timeout_height.into()),
+                    _runtime: Default::default(),
+                };
+                let key = packets.key(&client.metadata())?;
                 let proof = client.read_proof(vec![key], Some(block_hash)).await?;
                 let datagram = Datagram::PacketRecv {
                     packet: packet_data,
@@ -494,11 +497,11 @@ async fn relay(
                     dest_channel,
                     data,
                 };
-                let key = ibc::Acknowledgements::<Runtime>(
-                    (source_port, source_channel, timeout_height.into()),
-                    Default::default(),
-                )
-                .key(&client.metadata())?;
+                let acknowledgements = ibc::AcknowledgementsStore::<Runtime> {
+                    key: (source_port, source_channel, timeout_height.into()),
+                    _runtime: Default::default(),
+                };
+                let key = acknowledgements.key(&client.metadata())?;
                 let proof = client.read_proof(vec![key], Some(block_hash)).await?;
                 let datagram = Datagram::PacketAcknowledgement {
                     packet: packet_data,

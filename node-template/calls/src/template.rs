@@ -1,17 +1,22 @@
 //! Implements support for the template module.
 use codec::Encode;
+use core::marker::PhantomData;
 use sp_core::H256;
 use sp_finality_grandpa::{AuthorityList, SetId};
-use substrate_subxt::{system::System, Call};
+use substrate_subxt::{
+    module,
+    system::{System, SystemEventsDecoder},
+    Call,
+};
 
 /// The subset of the `template::Trait` that a client must implement.
+#[module]
 pub trait TemplateModule: System {}
 
-const MODULE: &str = "TemplateModule";
-
 /// Arguments for creating test client.
-#[derive(Encode)]
-pub struct TestCreateClientCall {
+#[derive(Encode, Call)]
+pub struct TestCreateClientCall<T: TemplateModule> {
+    pub _runtime: PhantomData<T>,
     pub identifier: H256,
     pub height: u32,
     pub set_id: SetId,
@@ -19,50 +24,34 @@ pub struct TestCreateClientCall {
     pub commitment_root: H256,
 }
 
-impl<T: TemplateModule> Call<T> for TestCreateClientCall {
-    const MODULE: &'static str = MODULE;
-    const FUNCTION: &'static str = "test_create_client";
-}
-
 /// Arguments for opening connection.
-#[derive(Encode)]
-pub struct TestConnOpenInitCall {
+#[derive(Encode, Call)]
+pub struct TestConnOpenInitCall<T: TemplateModule> {
+    pub _runtime: PhantomData<T>,
     pub identifier: H256,
     pub desired_counterparty_connection_identifier: H256,
     pub client_identifier: H256,
     pub counterparty_client_identifier: H256,
 }
 
-impl<T: TemplateModule> Call<T> for TestConnOpenInitCall {
-    const MODULE: &'static str = MODULE;
-    const FUNCTION: &'static str = "test_conn_open_init";
-}
-
 /// Arguments for binding port.
-#[derive(Encode)]
-pub struct TestBindPortCall {
+#[derive(Encode, Call)]
+pub struct TestBindPortCall<T: TemplateModule> {
+    pub _runtime: PhantomData<T>,
     pub identifier: Vec<u8>,
-}
-
-impl<T: TemplateModule> Call<T> for TestBindPortCall {
-    const MODULE: &'static str = MODULE;
-    const FUNCTION: &'static str = "test_bind_port";
 }
 
 /// Arguments for releasing port.
-#[derive(Encode)]
-pub struct TestReleasePortCall {
+#[derive(Encode, Call)]
+pub struct TestReleasePortCall<T: TemplateModule> {
+    pub _runtime: PhantomData<T>,
     pub identifier: Vec<u8>,
 }
 
-impl<T: TemplateModule> Call<T> for TestReleasePortCall {
-    const MODULE: &'static str = MODULE;
-    const FUNCTION: &'static str = "test_release_port";
-}
-
 /// Arguments for opening channel.
-#[derive(Encode)]
-pub struct TestChanOpenInitCall {
+#[derive(Encode, Call)]
+pub struct TestChanOpenInitCall<T: TemplateModule> {
+    pub _runtime: PhantomData<T>,
     pub unordered: bool,
     pub connection_hops: Vec<H256>,
     pub port_identifier: Vec<u8>,
@@ -71,14 +60,10 @@ pub struct TestChanOpenInitCall {
     pub counterparty_channel_identifier: H256,
 }
 
-impl<T: TemplateModule> Call<T> for TestChanOpenInitCall {
-    const MODULE: &'static str = MODULE;
-    const FUNCTION: &'static str = "test_chan_open_init";
-}
-
 /// Arguments for sending packet.
-#[derive(Encode)]
-pub struct TestSendPacketCall {
+#[derive(Encode, Call)]
+pub struct TestSendPacketCall<T: TemplateModule> {
+    pub _runtime: PhantomData<T>,
     pub sequence: u64,
     pub timeout_height: u32,
     pub source_port: Vec<u8>,
@@ -86,9 +71,4 @@ pub struct TestSendPacketCall {
     pub dest_port: Vec<u8>,
     pub dest_channel: H256,
     pub data: Vec<u8>,
-}
-
-impl<T: TemplateModule> Call<T> for TestSendPacketCall {
-    const MODULE: &'static str = MODULE;
-    const FUNCTION: &'static str = "test_send_packet";
 }

@@ -1,13 +1,19 @@
-use calls::{template, NodeRuntime as Runtime};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use lazy_static::lazy_static;
 // use rand::RngCore;
+use calls::{
+    template::{
+        TestBindPortCallExt, TestChanOpenInitCallExt, TestConnOpenInitCallExt,
+        TestCreateClientCallExt, TestReleasePortCallExt, TestSendPacketCallExt,
+    },
+    NodeRuntime as Runtime,
+};
 use sp_core::{storage::StorageKey, Blake2Hasher, Hasher, H256};
 use sp_finality_grandpa::{AuthorityList, VersionedAuthorityList, GRANDPA_AUTHORITIES_KEY};
 use sp_keyring::AccountKeyring;
 use std::collections::HashMap;
 use std::error::Error;
-use substrate_subxt::{BlockNumber, ClientBuilder};
+use substrate_subxt::{BlockNumber, ClientBuilder, PairSigner};
 
 lazy_static! {
     static ref ENDPOINTS: HashMap<&'static str, &'static str> = {
@@ -267,7 +273,7 @@ async fn create_client(
     counterparty_addr: &str,
     identifier: H256,
 ) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Bob.pair();
+    let signer = PairSigner::new(AccountKeyring::Bob.pair());
 
     let counterparty_client = ClientBuilder::<Runtime>::new()
         .set_url(counterparty_addr)
@@ -295,15 +301,16 @@ async fn create_client(
         .set_url(addr)
         .build()
         .await?;
-    let xt = client.xt(signer, None).await?;
-    xt.submit(template::TestCreateClientCall {
-        identifier,
-        height: 0,
-        set_id: 0,
-        authority_list: genesis_authorities,
-        commitment_root: genesis_header.state_root,
-    })
-    .await?;
+    let _result = client
+        .test_create_client(
+            &signer,
+            identifier,
+            0,
+            0,
+            genesis_authorities,
+            genesis_header.state_root,
+        )
+        .await?;
     Ok(())
 }
 
@@ -314,42 +321,40 @@ async fn conn_open_init(
     client_identifier: H256,
     counterparty_client_identifier: H256,
 ) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Bob.pair();
+    let signer = PairSigner::new(AccountKeyring::Bob.pair());
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
         .await?;
-    let xt = client.xt(signer, None).await?;
-    xt.submit(template::TestConnOpenInitCall {
-        identifier,
-        desired_counterparty_connection_identifier,
-        client_identifier,
-        counterparty_client_identifier,
-    })
-    .await?;
+    let _result = client
+        .test_conn_open_init(
+            &signer,
+            identifier,
+            desired_counterparty_connection_identifier,
+            client_identifier,
+            counterparty_client_identifier,
+        )
+        .await?;
     Ok(())
 }
 
 async fn bind_port(addr: &str, identifier: Vec<u8>) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Bob.pair();
+    let signer = PairSigner::new(AccountKeyring::Bob.pair());
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
         .await?;
-    let xt = client.xt(signer, None).await?;
-    xt.submit(template::TestBindPortCall { identifier }).await?;
+    let _result = client.test_bind_port(&signer, identifier).await?;
     Ok(())
 }
 
 async fn release_port(addr: &str, identifier: Vec<u8>) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Bob.pair();
+    let signer = PairSigner::new(AccountKeyring::Bob.pair());
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
         .await?;
-    let xt = client.xt(signer, None).await?;
-    xt.submit(template::TestReleasePortCall { identifier })
-        .await?;
+    let _result = client.test_release_port(&signer, identifier).await?;
     Ok(())
 }
 
@@ -362,21 +367,22 @@ async fn chan_open_init(
     counterparty_port_identifier: Vec<u8>,
     counterparty_channel_identifier: H256,
 ) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Bob.pair();
+    let signer = PairSigner::new(AccountKeyring::Bob.pair());
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
         .await?;
-    let xt = client.xt(signer, None).await?;
-    xt.submit(template::TestChanOpenInitCall {
-        unordered,
-        connection_hops,
-        port_identifier,
-        channel_identifier,
-        counterparty_port_identifier,
-        counterparty_channel_identifier,
-    })
-    .await?;
+    let _result = client
+        .test_chan_open_init(
+            &signer,
+            unordered,
+            connection_hops,
+            port_identifier,
+            channel_identifier,
+            counterparty_port_identifier,
+            counterparty_channel_identifier,
+        )
+        .await?;
     Ok(())
 }
 
@@ -390,21 +396,22 @@ async fn send_packet(
     dest_channel: H256,
     data: Vec<u8>,
 ) -> Result<(), Box<dyn Error>> {
-    let signer = AccountKeyring::Bob.pair();
+    let signer = PairSigner::new(AccountKeyring::Bob.pair());
     let client = ClientBuilder::<Runtime>::new()
         .set_url(addr.clone())
         .build()
         .await?;
-    let xt = client.xt(signer, None).await?;
-    xt.submit(template::TestSendPacketCall {
-        sequence,
-        timeout_height,
-        source_port,
-        source_channel,
-        dest_port,
-        dest_channel,
-        data,
-    })
-    .await?;
+    let _result = client
+        .test_send_packet(
+            &signer,
+            sequence,
+            timeout_height,
+            source_port,
+            source_channel,
+            dest_port,
+            dest_channel,
+            data,
+        )
+        .await?;
     Ok(())
 }
