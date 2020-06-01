@@ -134,7 +134,7 @@ async fn run(config: &Config) -> Result<(), Box<dyn Error>> {
         async_std::task::spawn(async move {
             let mut signer = PairSigner::new(AccountKeyring::Alice.pair());
             let nonce = to_client
-                .account(&AccountKeyring::Alice.to_account_id())
+                .account(&AccountKeyring::Alice.to_account_id(), None)
                 .await
                 .unwrap()
                 .nonce;
@@ -183,12 +183,7 @@ async fn relay(
     debug!("[{}] block_number: {}", chain_name, block_number);
     debug!("[{}] state_root: {:?}", chain_name, state_root);
     debug!("[{}] block_hash: {:?}", chain_name, block_hash);
-    let client_state = client
-        .clients(
-            client_identifier,
-            //           Some(block_hash)
-        )
-        .await?;
+    let client_state = client.clients(client_identifier, Some(block_hash)).await?;
 
     let counterparty_block_hash = counterparty_client
         .block_hash(Some(BlockNumber::from(client_state.latest_height)))
@@ -198,7 +193,7 @@ async fn relay(
         chain_name, client_state.latest_height
     );
     let counterparty_client_state = counterparty_client
-        .clients(counterparty_client_identifier)
+        .clients(counterparty_client_identifier, None)
         .await?;
     if counterparty_client_state.latest_height < block_number {
         for height in counterparty_client_state.latest_height + 1..=block_number {
@@ -236,17 +231,12 @@ async fn relay(
         );
     }
     for connection in client_state.connections.iter() {
-        let connection_end = client
-            .connections(
-                *connection,
-                // Some(block_hash),
-            )
-            .await?;
+        let connection_end = client.connections(*connection, Some(block_hash)).await?;
         debug!("[{}] connection_end: {:#?}", chain_name, connection_end);
         let remote_connection_end = counterparty_client
             .connections(
                 connection_end.counterparty_connection_identifier,
-                // counterparty_block_hash,
+                counterparty_block_hash,
             )
             .await?;
         debug!(
@@ -327,12 +317,7 @@ async fn relay(
         info!("[{}] channels: {:?}", chain_name, client_state.channels);
     }
     for channel in client_state.channels.iter() {
-        let channel_end = client
-            .channels(
-                channel.clone(),
-                // Some(block_hash),
-            )
-            .await?;
+        let channel_end = client.channels(channel.clone(), Some(block_hash)).await?;
 
         debug!("[{}] channel_end: {:#?}", chain_name, channel_end);
         let remote_channel_end = counterparty_client
@@ -341,7 +326,7 @@ async fn relay(
                     channel_end.counterparty_port_identifier.clone(),
                     channel_end.counterparty_channel_identifier,
                 ),
-                // counterparty_block_hash,
+                counterparty_block_hash,
             )
             .await?;
         debug!(
@@ -355,10 +340,7 @@ async fn relay(
         if channel_end.state == ChannelState::Init && remote_channel_end.state == ChannelState::None
         {
             let connection_end = client
-                .connections(
-                    channel_end.connection_hops[0],
-                    // Some(block_hash),
-                )
+                .connections(channel_end.connection_hops[0], Some(block_hash))
                 .await?;
             let channels = ibc::ChannelsStore::<Runtime> {
                 key: channel.clone(),
