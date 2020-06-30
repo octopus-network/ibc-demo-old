@@ -1,11 +1,18 @@
-use sp_runtime::OpaqueExtrinsic;
-use substrate_subxt::{balances::Balances, contracts::Contracts, system::System};
+use sp_runtime::{MultiSignature, OpaqueExtrinsic};
+use substrate_subxt::{
+    balances::Balances, contracts::Contracts, system::System, DefaultExtra, Runtime,
+};
 
 pub mod ibc;
 pub mod template;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct NodeRuntime;
+
+impl Runtime for NodeRuntime {
+    type Signature = MultiSignature;
+    type Extra = DefaultExtra<Self>;
+}
 
 impl System for NodeRuntime {
     type Index = <node_runtime::Runtime as frame_system::Trait>::Index;
