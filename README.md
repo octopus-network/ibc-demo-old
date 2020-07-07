@@ -2,7 +2,8 @@
 
 ```
 $ git clone https://github.com/cdot-network/ibc-demo.git
-$ submodule update --init
+$ cd ibc-demo
+$ git submodule update --init
 $ cd node-template
 $ cargo build --release
 $ ./target/release/node-template --base-path /tmp/chain-appia --dev
