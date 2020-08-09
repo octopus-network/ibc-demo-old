@@ -290,7 +290,7 @@ async fn create_client(
     let storage_key = StorageKey(GRANDPA_AUTHORITIES_KEY.to_vec());
     let genesis_authorities: AuthorityList = counterparty_client
         .rpc
-        .storage(storage_key, genesis_hash)
+        .storage(&storage_key, genesis_hash)
         .await?
         .map(|data| Decode::decode(&mut &data.0[..]).unwrap())
         .map(|versioned: VersionedAuthorityList| versioned.into())

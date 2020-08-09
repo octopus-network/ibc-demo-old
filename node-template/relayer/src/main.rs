@@ -80,88 +80,85 @@ fn main() {
 }
 
 async fn run(config: &Config) -> Result<(), Box<dyn Error>> {
-    for task in &config.relay {
-        println!("task: {:?}", task);
-        let from = task.from.clone();
-        let from_endpoint = &config.chains[&from].endpoint;
-        let from_client_identifier = hex::decode(&config.chains[&from].client_identifier)
-            .and_then(|identifier| Ok(H256::from_slice(&identifier)))
-            .unwrap();
+    async_std::task::block_on(async {
+        for task in &config.relay {
+            println!("task: {:?}", task);
+            let from = task.from.clone();
+            let from_endpoint = &config.chains[&from].endpoint;
+            let from_client_identifier = hex::decode(&config.chains[&from].client_identifier)
+                .and_then(|identifier| Ok(H256::from_slice(&identifier)))
+                .unwrap();
 
-        let to = task.to.clone();
-        let to_endpoint = &config.chains[&to].endpoint;
-        let to_client_identifier = hex::decode(&config.chains[&to].client_identifier)
-            .and_then(|identifier| Ok(H256::from_slice(&identifier)))
-            .unwrap();
+            let to = task.to.clone();
+            let to_endpoint = &config.chains[&to].endpoint;
+            let to_client_identifier = hex::decode(&config.chains[&to].client_identifier)
+                .and_then(|identifier| Ok(H256::from_slice(&identifier)))
+                .unwrap();
 
-        let from_client = ClientBuilder::<Runtime>::new()
-            .set_url(from_endpoint)
-            .build()
-            .await?;
-        let to_client = ClientBuilder::<Runtime>::new()
-            .set_url(to_endpoint)
-            .build()
-            .await?;
+            let from_client = ClientBuilder::<Runtime>::new()
+                .set_url(from_endpoint)
+                .build()
+                .await?;
+            let to_client = ClientBuilder::<Runtime>::new()
+                .set_url(to_endpoint)
+                .build()
+                .await?;
 
-        let mut from_block_headers = from_client.subscribe_finalized_blocks().await?;
+            let mut from_block_headers = from_client.subscribe_finalized_blocks().await?;
 
-        let (tx, rx) = channel();
+            let (tx, rx) = channel();
 
-        let from_client = from_client.clone();
-        {
-            let to_client = to_client.clone();
-            async_std::task::spawn(async move {
-                loop {
-                    let block_header = from_block_headers.next().await;
-                    let tx = tx.clone();
-                    if let Err(e) = relay(
-                        &from,
-                        tx,
-                        block_header,
-                        &from_client,
-                        from_client_identifier,
-                        &to_client,
-                        to_client_identifier,
-                    )
-                    .await
-                    {
-                        error!("[{}] failed to relay; error = {}", from, e);
+            let from_client = from_client.clone();
+            {
+                let to_client = to_client.clone();
+                async_std::task::spawn(async move {
+                    loop {
+                        let block_header = from_block_headers.next().await;
+                        let tx = tx.clone();
+                        if let Err(e) = relay(
+                            &from,
+                            tx,
+                            block_header,
+                            &from_client,
+                            from_client_identifier,
+                            &to_client,
+                            to_client_identifier,
+                        )
+                        .await
+                        {
+                            error!("[{}] failed to relay; error = {}", from, e);
+                        }
                     }
+                });
+            }
+
+            async_std::task::spawn(async move {
+                let mut signer = PairSigner::new(AccountKeyring::Alice.pair());
+                let nonce = to_client
+                    .account(&AccountKeyring::Alice.to_account_id(), None)
+                    .await
+                    .unwrap()
+                    .nonce;
+                signer.set_nonce(nonce);
+                loop {
+                    let datagram = rx.recv().unwrap();
+                    match datagram {
+                        Datagram::ClientUpdate { .. } => {
+                            debug!("[relayer => {}] datagram: {:?}", to, datagram)
+                        }
+                        _ => debug!("[relayer => {}] datagram: {:#?}", to, datagram),
+                    }
+                    if let Err(e) = to_client.submit_datagram(&signer, datagram).await {
+                        error!("[relayer => {}] failed to send datagram; error = {}", to, e);
+                    }
+                    signer.increment_nonce();
                 }
             });
         }
-
-        async_std::task::spawn(async move {
-            let mut signer = PairSigner::new(AccountKeyring::Alice.pair());
-            let nonce = to_client
-                .account(&AccountKeyring::Alice.to_account_id(), None)
-                .await
-                .unwrap()
-                .nonce;
-            signer.set_nonce(nonce);
-            loop {
-                let datagram = rx.recv().unwrap();
-                match datagram {
-                    Datagram::ClientUpdate { .. } => {
-                        debug!("[relayer => {}] datagram: {:?}", to, datagram)
-                    }
-                    _ => debug!("[relayer => {}] datagram: {:#?}", to, datagram),
-                }
-                if let Err(e) = to_client.submit_datagram(&signer, datagram).await {
-                    error!("[relayer => {}] failed to send datagram; error = {}", to, e);
-                }
-                signer.increment_nonce();
-            }
-        });
-    }
-
-    async_std::task::block_on(async move {
         loop {
             async_std::task::sleep(Duration::from_secs(60 * 60)).await;
         }
-    });
-
-    Ok(())
+    })
 }
 
 async fn relay(

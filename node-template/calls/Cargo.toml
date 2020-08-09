@@ -5,7 +5,7 @@ authors = ["Yuanchao Sun <ys@cdot.network>"]
 edition = "2018"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "1.3.1", default-features = false, features = ["derive", "full"] }
+codec = { package = "parity-scale-codec", version = "1.3.4", default-features = false, features = ["derive", "full"] }
 
 frame-system = { path = "../../substrate/frame/system" }
 node-runtime = { path = "../../node-template/runtime", package = "node-template-runtime" }

@@ -1,6 +1,6 @@
 use sp_runtime::{MultiSignature, OpaqueExtrinsic};
 use substrate_subxt::{
-    balances::Balances, contracts::Contracts, system::System, DefaultExtra, Runtime,
+    balances::Balances, contracts::Contracts, extrinsic::DefaultExtra, system::System, Runtime,
 };
 
 pub mod ibc;
