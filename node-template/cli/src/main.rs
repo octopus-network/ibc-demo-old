@@ -8,7 +8,6 @@ use calls::{
     },
     NodeRuntime as Runtime,
 };
-use codec::Decode;
 use sp_core::{storage::StorageKey, Blake2Hasher, Hasher, H256};
 use sp_finality_grandpa::{AuthorityList, VersionedAuthorityList, GRANDPA_AUTHORITIES_KEY};
 use sp_keyring::AccountKeyring;
@@ -289,11 +288,9 @@ async fn create_client(
     println!("counterparty genesis_header: {:?}", genesis_header);
     let storage_key = StorageKey(GRANDPA_AUTHORITIES_KEY.to_vec());
     let genesis_authorities: AuthorityList = counterparty_client
-        .rpc
-        .storage(&storage_key, genesis_hash)
+        .fetch_unhashed::<VersionedAuthorityList>(storage_key, genesis_hash)
         .await?
-        .map(|data| Decode::decode(&mut &data.0[..]).unwrap())
-        .map(|versioned: VersionedAuthorityList| versioned.into())
+        .map(|versioned| versioned.into())
         .unwrap();
     println!(
         "counterparty genesis_authorities: {:?}",
